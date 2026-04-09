@@ -3509,7 +3509,7 @@ const DB_DEFAULT = {
   activities:[],          // usuário escolhe o que quer ativar
   profile:{name:'',weight:0},
   water:{goal:3000,entries:[]},
-  settings:{showDietTab:false,showCreatina:false}, // tudo desligado por padrão
+  settings:{showDietTab:true,showCreatina:false}, // tudo desligado por padrão
   creatina:{streak:0,lastDate:'',startDate:''},
   insights:{lastShown:0,dismissed:[]},
   gymRoutines:[],
@@ -3554,7 +3554,7 @@ let db = (()=>{
     const old = localStorage.getItem('wod_diet_v5')||localStorage.getItem('wod_diet_v4')||localStorage.getItem('wod_diet_v3');
     if (old) {
       const p = JSON.parse(old);
-      return {meals:p.meals||[],weight:p.weight||[],sessions:p.sessions||[],lastComplete:p.lastComplete||'',lastReset:p.lastReset||'',activities:p.activities||[],profile:{name:'',weight:0},water:{goal:3000,entries:[]},settings:{showDietTab:false,showCreatina:false}};
+      return {meals:p.meals||[],weight:p.weight||[],sessions:p.sessions||[],lastComplete:p.lastComplete||'',lastReset:p.lastReset||'',activities:p.activities||[],profile:{name:'',weight:0},water:{goal:3000,entries:[]},settings:{showDietTab:true,showCreatina:false}};
     }
   } catch(e) {
     console.warn('[CT] Erro no carregamento inicial, usando padrão:', e.message);
@@ -3581,9 +3581,9 @@ async function _loadDbAsync() {
 }
 
 // ── Guards: ensure all blocks exist (migration for old saves) ──
-if(!db.settings) db.settings={showDietTab:false,showCreatina:false};
+if(!db.settings) db.settings={showDietTab:true,showCreatina:false};
 if(!db.activities) db.activities=[]; // usuário ativa o que quiser nas configurações
-if(db.settings.showDietTab === undefined) db.settings.showDietTab=false;
+if(db.settings.showDietTab === undefined) db.settings.showDietTab=true;
 if(db.settings.showCreatina===undefined) db.settings.showCreatina=false;
 if(!db.creatina) db.creatina={streak:0,lastDate:'',startDate:'',takenAt:''};
     if(db.creatina.takenAt===undefined) db.creatina.takenAt='';
@@ -3785,8 +3785,8 @@ function nowTimeStr(){return new Date().toTimeString().slice(0,5);}
 const DB = {
   /** Ensure settings block always exists (runs before everything) */
   initSettings(){
-    if(!db.settings) db.settings={showDietTab:false,showCreatina:false};
-    if(db.settings.showDietTab===undefined) db.settings.showDietTab=false;
+    if(!db.settings) db.settings={showDietTab:true,showCreatina:false};
+    if(db.settings.showDietTab===undefined) db.settings.showDietTab=true;
     if(db.settings.showCreatina===undefined) db.settings.showCreatina=false;
     if(!db.creatina) db.creatina={streak:0,lastDate:'',startDate:''};
     if(!db.insights) db.insights={lastShown:0,dismissed:[]};
@@ -3894,11 +3894,10 @@ const Nav = {
    * Hides/shows the Dieta button and adjusts the initial active view.
    */
   render(){
-    const showDiet = db.settings.showDietTab !== false;
     const homeBtn  = document.getElementById('nb-home');
     if(homeBtn){ homeBtn.style.display = ''; }
     const mealsBtn = document.getElementById('nb-meals');
-    if(mealsBtn){ mealsBtn.style.display = showDiet ? '' : 'none'; }
+    if(mealsBtn){ mealsBtn.style.display = ''; } // sempre visível
     // Water nav badge: show % if not done
     const waterPct = getWaterPct();
     const waterBtn = document.getElementById('nb-water');
@@ -4173,7 +4172,7 @@ function finishOnboarding(){
   // Save diet tab preference from onboarding card selection
   if(!db.settings)db.settings={};
   // Dieta sempre ativa — nao desativar via onboarding
-  if(db.settings.showDietTab === undefined) db.settings.showDietTab = false;
+  // showDietTab controlado pelo card de onboarding
   db.onboardingVersion = 2;
   save();
   _showApp();
@@ -4424,7 +4423,7 @@ function _finishSportsReview() {
   db.activities = Array.from(selActs);
   var dietCard = document.querySelector('[data-act="_diet"]');
   if (!db.settings) db.settings = {};
-  if(db.settings.showDietTab === undefined) db.settings.showDietTab = false;
+  // showDietTab controlado pelo card de onboarding
   db.onboardingVersion = 2;
   save();
   window._reviewMode = false;
