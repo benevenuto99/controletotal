@@ -4285,7 +4285,7 @@ async function _showApp() {
           await _checkMigration(sess.user);
           if (sess.user.email === ADMIN_EMAIL) {
             toast('✅ Bem-vindo, Admin!', 2000);
-            setTimeout(function(){ openAdminPanel(); }, 1500);
+            setTimeout(function(){ openAdminPanel(); }, 3000);
           } else {
             toast('✅ Bem-vindo, ' + (db.profile?.name || sess.user.email.split('@')[0]) + '!', 3000);
           }
@@ -4475,7 +4475,7 @@ async function initAuth() {
       await _checkMigration(session.user);
       if (session.user.email === ADMIN_EMAIL) {
         toast('✅ Bem-vindo, Admin!', 2000);
-        setTimeout(function(){ openAdminPanel(); }, 1500);
+        setTimeout(function(){ openAdminPanel(); }, 3000);
       } else {
         toast('✅ Bem-vindo, ' + (db.profile?.name || session.user.email.split('@')[0]) + '!', 3000);
       }
@@ -8621,7 +8621,7 @@ function maybeCelebrate(dayComplete, count, prevCount) {
 // ║  MODULE: SWIPE NAV — Horizontal gesture navigation              ║
 // ╚══════════════════════════════════════════════════════════════════╝
 
-var VIEW_ORDER = ['home','meals','water','act','evo','perfil']; // var = hoisted, avoids TDZ
+var VIEW_ORDER = ['home','meals','water','act','evo','perfil','circulo']; // var = hoisted, avoids TDZ
 var _currentViewIdx = 0;
 let _swipeTouchStartX = 0;
 let _swipeTouchStartY = 0;
