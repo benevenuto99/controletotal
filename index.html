@@ -373,13 +373,13 @@ body{padding-bottom:0}
 #onboarding.hidden{display:none}
 /* Multi-step container */
 .ob-steps{display:flex;flex-direction:row;width:300%;transition:transform .4s cubic-bezier(.4,0,.2,1);flex:1}
-.ob-step{width:33.333%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:40px 24px 24px;overflow-y:auto;box-sizing:border-box}
+.ob-step{width:33.333%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:40px 24px calc(80px + env(safe-area-inset-bottom,0px));overflow-y:auto;box-sizing:border-box}
 /* Progress dots */
 .ob-progress{display:flex;justify-content:center;gap:8px;padding:16px 0 0;flex-shrink:0}
 .ob-dot{width:6px;height:6px;border-radius:50%;background:var(--border2);transition:all .3s}
 .ob-dot.on{width:20px;border-radius:3px;background:var(--acid)}
 /* Step nav */
-.ob-nav{display:flex;gap:10px;width:100%;max-width:400px;padding:16px 24px 32px;flex-shrink:0;margin:0 auto}
+.ob-nav{display:flex;gap:10px;width:100%;max-width:400px;padding:16px 24px calc(32px + env(safe-area-inset-bottom,0px));flex-shrink:0;margin:0 auto}
 .ob-nav-back{flex:0 0 auto;background:none;border:1px solid var(--border2);color:var(--muted2);border-radius:12px;padding:0 16px;height:52px;font-family:"Space Mono",monospace;font-size:10px;cursor:pointer;touch-action:manipulation;transition:all .2s}
 .ob-nav-next{flex:1;height:52px;border-radius:12px;border:none;background:var(--acid);color:#000;font-family:"Bebas Neue",sans-serif;font-size:20px;letter-spacing:2px;cursor:pointer;touch-action:manipulation;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
 .ob-nav-next:active{transform:scale(.97)}
@@ -429,7 +429,7 @@ body{padding-bottom:0}
 .ob-feat-name{font-size:13px;font-weight:600;color:var(--text);letter-spacing:.3px;line-height:1.2}
 .ob-feat-sub{font-size:9px;color:var(--muted2);line-height:1.4;margin-top:2px}
 /* Botão Começar — fundo ácido, texto e raio preto, active fica verde */
-.ob-start-btn{width:100%;max-width:360px;height:50px;border-radius:12px;border:none;background:var(--acid);color:#000;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:18px;transition:transform .12s,background .15s,color .15s;flex-shrink:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.ob-start-btn{width:100%;max-width:360px;height:50px;border-radius:12px;border:none;background:var(--acid);color:#000;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:18px;margin-bottom:4px;transition:transform .12s,background .15s,color .15s;flex-shrink:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .ob-start-btn:active{transform:scale(.97);background:var(--acid2);color:var(--acid)}
 .ob-start-btn:active .ob-bolt-btn{fill:var(--acid)}
 /* BeneApps footer */
@@ -2753,12 +2753,13 @@ select option{background:var(--card2)}
   <!-- ═══ PERFIL ═══ -->
   <div id="v-perfil" class="view">
     <!-- User header -->
-    <div class="perfil-user-header" id="perfilUserHeader">
+    <div class="perfil-user-header" id="perfilUserHeader" onclick="editPerfilName()">
       <div class="perfil-user-avatar">⚡</div>
-      <div>
+      <div style="flex:1;min-width:0">
         <div class="perfil-user-name" id="perfilUserName">Atleta</div>
         <div class="perfil-user-sub" id="perfilUserSub">Controle Total</div>
       </div>
+      <div style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace">✏️</div>
     </div>
 
     <!-- Stats rápido -->
@@ -2812,34 +2813,11 @@ select option{background:var(--card2)}
           <div><div class="perfil-config-title">🔔 Notificações</div><div class="perfil-config-sub">Lembretes inteligentes ao longo do dia</div></div>
           <button class="toggle-switch" id="settingsNotifToggle2" onclick="Notif.toggleSetting();updateSettingsToggles()"></button>
         </div>
-        <div style="padding-top:12px">
-          <button class="btn btn-ghost" style="font-size:12px" onclick="openSheet('sheetManageActs')">⚙️ Gerenciar Esportes Ativos</button>
-        </div>
+
       </div>
     </div>
 
-    <!-- Backup -->
-    <div class="perfil-section">
-      <div class="perfil-section-header" onclick="togglePerfilSection('backup')">
-        <h3><span class="ps-icon">💾</span>Backup & Dados</h3>
-        <span class="perfil-section-chevron">▼</span>
-      </div>
-      <div class="perfil-section-body" id="perfil-body-backup">
-        <button class="btn btn-ghost" style="font-size:13px;margin-bottom:8px;width:100%" onclick="generateBackup()"><span class="icon icon-download"></span> Gerar Código de Backup</button>
-        <div class="backup-code" id="backupCode2" style="display:none;margin-bottom:6px"></div>
-        <button class="btn btn-ghost btn-sm" id="copyBackupBtn2" style="display:none;margin-bottom:10px" onclick="copyBackup2()">📋 Copiar Código</button>
-        <button class="btn btn-ghost" style="font-size:12px;margin-bottom:6px;width:100%" onclick="autoBackupSave();toast('Backup salvo')">💾 Salvar Agora</button>
-        <button class="btn btn-ghost" style="font-size:12px;margin-bottom:10px;width:100%" onclick="promptAutoBackupRestore()">🔄 Restaurar Automático</button>
-        <div class="divider"></div>
-        <label class="field-label" style="margin-bottom:4px;display:block">Restaurar backup manual</label>
-        <textarea id="restoreCode2" placeholder="Cole o código de backup aqui..." style="min-height:70px;font-family:'Space Mono',monospace;font-size:10px;margin-bottom:8px;width:100%" aria-label="Código de backup para restaurar"></textarea>
-        <button class="btn btn-ghost" style="font-size:12px;width:100%" onclick="restoreBackup2()"><span class="icon icon-file-import"></span> Restaurar Dados</button>
-        <div id="restoreResult2" style="font-size:11px;font-family:'Space Mono',monospace;margin-top:6px"></div>
-        <div class="divider" style="margin-top:10px"></div>
-        <button class="btn btn-ghost" style="font-size:12px;margin-top:6px;width:100%" onclick="exportSessionsCSV()">📥 Exportar Treinos CSV</button>
-        <div style="margin-top:10px"><label class="field-label" style="display:block;margin-bottom:4px">Importar pesos via CSV</label><textarea id="perfil-csvWeightPaste" aria-label="Dados CSV de peso" placeholder="data;peso&#10;01/01/2025;80.5" style="width:100%;min-height:60px;font-size:10px;font-family:'Space Mono',monospace;margin-bottom:6px"></textarea><button class="btn btn-ghost" style="font-size:12px;width:100%" onclick="importWeightPaste()">📥 Importar Pesos CSV</button></div>
-      </div>
-    </div>
+
 
     <!-- Acesso admin (só aparece para o admin) -->
     <div id="adminAccessBtn" style="display:none;padding:12px 16px">
@@ -4685,6 +4663,17 @@ async function circuloPublishSnapshot() {
 
 // ── Carregar dados do círculo ─────────────────────────────────────
 async function circuloLoad() {
+  // Tentar recuperar userId da sessão se não estiver no db
+  if (!db._userId) {
+    try {
+      const sb = await _getSupabase();
+      const { data } = await sb.auth.getSession();
+      if (data?.session?.user?.id) {
+        db._userId = data.session.user.id;
+        save();
+      }
+    } catch(e) {}
+  }
   if (!db._userId) {
     _showCirculoEmpty('Faça login para usar o Círculo de Confiança.');
     return;
@@ -8832,10 +8821,11 @@ function _showExportBanner() {
   const banner = document.createElement('div');
   banner.id = 'export-banner';
   banner.style.cssText = [
-    'position:fixed','top:54px','left:0','right:0','z-index:8000',
+    'position:fixed','top:54px','left:50%','transform:translateX(-50%)',
+    'width:calc(100% - 32px)','max-width:400px','z-index:8000',
     'background:linear-gradient(90deg,rgba(212,255,0,.12),rgba(212,255,0,.06))',
-    'border-bottom:1px solid rgba(212,255,0,.2)',
-    'padding:10px 16px','display:flex','align-items:center','gap:12px',
+    'border:1px solid rgba(212,255,0,.2)','border-radius:12px',
+    'padding:10px 14px','display:flex','align-items:center','gap:10px',
     'animation:slideUp .3s ease'
   ].join(';');
   banner.innerHTML =
@@ -10178,6 +10168,19 @@ function importSessionsCSV(text) {
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  MODULE: PERFIL — Aba de Perfil unificada                       ║
 // ╚══════════════════════════════════════════════════════════════════╝
+
+
+function editPerfilName() {
+  const current = db.profile?.name || '';
+  const novo = prompt('Seu nome:', current);
+  if (novo === null) return; // cancelou
+  const trimmed = novo.trim();
+  if (!db.profile) db.profile = {};
+  db.profile.name = trimmed || current;
+  save();
+  renderPerfil();
+  toast('✅ Nome atualizado');
+}
 
 function renderPerfil() {
   const ds = db.dailyStreak || {};
