@@ -2,13 +2,14 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#080808">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Controle Total">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="description" content="Controle Total — Performance, Dieta e Evolução">
+<!-- CSP deve ser configurado via header HTTP no servidor, não via meta tag em produção -->
 <link rel="manifest" id="pwa-manifest" crossorigin="use-credentials">
 <link rel="apple-touch-icon" id="pwa-icon" sizes="180x180">
 <title>Controle Total</title>
@@ -566,6 +567,25 @@ select option{background:var(--card2)}
 .food-del{opacity:0;background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:2px 4px;border-radius:4px;transition:opacity .2s,color .2s;flex-shrink:0}
 .food-item:hover .food-del{opacity:1}
 .food-del:hover{color:var(--red)}
+/* ── Substituições ── */
+.food-subst-btn{display:inline-flex;align-items:center;gap:3px;background:rgba(212,255,0,.07);border:1px solid rgba(212,255,0,.2);color:var(--acid2);border-radius:20px;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.3px;padding:2px 8px;cursor:pointer;touch-action:manipulation;transition:all .18s;flex-shrink:0;margin-left:4px;line-height:1.4}
+.food-subst-btn:active{background:rgba(212,255,0,.18);transform:scale(.93)}
+.food-subst-btn .subst-count{font-size:8px;opacity:.7}
+/* Modal de substituições */
+.subst-modal-overlay{position:fixed;inset:0;z-index:9994;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;padding:0;opacity:0;pointer-events:none;transition:opacity .22s}
+.subst-modal-overlay.open{opacity:1;pointer-events:all}
+.subst-modal-sheet{background:var(--card);border-radius:20px 20px 0 0;padding:18px 18px 36px;width:100%;max-width:520px;max-height:80vh;overflow-y:auto;transform:translateY(48px);transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.subst-modal-overlay.open .subst-modal-sheet{transform:translateY(0)}
+.subst-modal-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 14px}
+.subst-modal-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.2px;color:var(--text);margin-bottom:4px}
+.subst-modal-sub{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:16px}
+.subst-item{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)}
+.subst-item:last-child{border-bottom:none}
+.subst-item-icon{font-size:14px;flex-shrink:0;opacity:.7}
+.subst-item-body{flex:1;min-width:0}
+.subst-item-name{font-size:13px;color:var(--text);line-height:1.3}
+.subst-item-qty{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted2);margin-top:2px}
+.subst-modal-close{background:none;border:none;color:var(--muted2);font-size:20px;cursor:pointer;padding:0;line-height:1;float:right}
 .meal-foot{display:flex;gap:7px;padding:8px 12px;background:#0b0b0b;border-top:1px solid var(--border)}
 
 /* ══ ACTIVITY CARDS / SLIDER ══ */
@@ -1909,6 +1929,23 @@ select option{background:var(--card2)}
 
 /* ══ FREE MEAL BANNER ══ */
 .free-meal-banner{background:linear-gradient(135deg,rgba(255,140,0,.1),rgba(255,110,180,.08));border:1px solid rgba(255,140,0,.25);border-radius:13px;padding:14px 16px;margin-bottom:10px;animation:slideUp .28s ease both}
+/* ── Opções Alternativas (informativo) ── */
+.diet-opcoes-section{margin:8px 12px 16px;border:1px solid var(--border2);border-radius:14px;overflow:hidden;background:var(--card2)}
+.diet-opcoes-header{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;gap:10px}
+.diet-opcoes-header:active{background:rgba(255,255,255,.03)}
+.diet-opcoes-label{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.diet-opcoes-title{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.8px;color:var(--text)}
+.diet-opcoes-sub{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-top:1px}
+.diet-opcoes-chevron{font-size:14px;color:var(--muted);flex-shrink:0;transition:transform .2s}
+.diet-opcoes-body{border-top:1px solid var(--border);padding:10px 14px 14px}
+.diet-opcao-card{margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.diet-opcao-card:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+.diet-opcao-title{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.8px;color:var(--acid2);margin-bottom:8px}
+.diet-opcao-item{display:flex;align-items:flex-start;gap:8px;padding:4px 0}
+.diet-opcao-dot{color:var(--muted2);font-size:16px;line-height:1.3;flex-shrink:0}
+.diet-opcao-item-body{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+.diet-opcao-name{font-size:13px;color:var(--text);line-height:1.4}
+.diet-opcao-qty{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted2);background:var(--card);border:1px solid var(--border);border-radius:4px;padding:1px 5px;white-space:nowrap}
 .free-meal-banner-top{display:flex;align-items:center;gap:10px}
 .free-meal-icon{font-size:26px;flex-shrink:0}
 .free-meal-info{flex:1}
@@ -3461,11 +3498,25 @@ const PDFJS_SRC   = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.
 const PDFJS_WORKER= 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 const JSPDF_SRC   = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
 
+// SRI hashes para verificação de integridade dos scripts externos.
+// IMPORTANTE: insira os hashes reais obtidos em https://www.srihash.org/
+// enquanto vazios, o carregamento ocorre normalmente sem verificação.
+const SCRIPT_INTEGRITY = {
+  // [PDFJS_SRC]:  'sha384-HASH_REAL_AQUI',
+  // [JSPDF_SRC]:  'sha384-HASH_REAL_AQUI',
+};
+
 function _loadScript(src){
   return new Promise((resolve,reject)=>{
     if(document.querySelector('script[src="'+src+'"]')){resolve();return;}
     const s=document.createElement('script');
-    s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error('Falha ao carregar: '+src));
+    s.src=src;
+    // Adicionar SRI se disponível para o script
+    if(SCRIPT_INTEGRITY[src]){
+      s.integrity=SCRIPT_INTEGRITY[src];
+      s.crossOrigin='anonymous';
+    }
+    s.onload=resolve;s.onerror=()=>reject(new Error('Falha ao carregar: '+src));
     document.head.appendChild(s);
   });
 }
@@ -3624,6 +3675,7 @@ if(db.settings&&db.settings.notifications===undefined) db.settings.notifications
 if(!db.profile) db.profile={name:'',weight:0};
 if(!db.gymRoutines) db.gymRoutines=[];
 if(!db.syncQueue)   db.syncQueue=[];
+if(!db.dietOpcoes)  db.dietOpcoes=[];
 if(!db._schemaVersion) db._schemaVersion=1;
 if(!db._userId)     db._userId=null;
 
@@ -3818,6 +3870,7 @@ const DB = {
     if(!db.dailyStreak.bestStreak) db.dailyStreak.bestStreak=db.dailyStreak.count||0;
     if(!db.dailyStreak.history) db.dailyStreak.history=[];
     if(!db.missions) db.missions={lastDate:'',water:false,creatina:false,dieta:false,treino:false};
+    if(!db.dietOpcoes) db.dietOpcoes=[];
     if(db.settings.notifications===undefined) db.settings.notifications=false;
     if(db.settings.calorieGoal===undefined) db.settings.calorieGoal=0;
   },
@@ -4050,6 +4103,7 @@ function initBoltCanvas() {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const W = 240, H = 240, cx = W/2, cy = H/2;
+  let _boltRafId = null; // permite cancelar o loop quando o canvas sair da tela
 
   // Desenha um segmento de raio com desvios aleatórios (algoritmo midpoint displacement)
   function drawBoltSegment(x1, y1, x2, y2, displacement, alpha, width) {
@@ -4178,10 +4232,12 @@ function initBoltCanvas() {
       if (timer >= FADE_DUR) { phase = 'idle'; idleTime = 0; }
     }
 
-    requestAnimationFrame(frame);
+    _boltRafId = requestAnimationFrame(frame);
   }
 
-  requestAnimationFrame(frame);
+  _boltRafId = requestAnimationFrame(frame);
+  // Cancela automaticamente quando o canvas for removido do DOM
+  canvas._stopBolt = () => { cancelAnimationFrame(_boltRafId); };
 }
 
 function finishOnboarding(){
@@ -4271,6 +4327,18 @@ function _showOnboardingDirect() {
 // _welcomeNext removida — unificada no step 1 do onboarding
 
 async function _showApp() {
+  // Safety timer: se tudo travar (SDK lento, sem rede), revela o app em 4s no máximo
+  let _appRevealed = false;
+  function _safeReveal() {
+    if (_appRevealed) return;
+    _appRevealed = true;
+    _revealApp();
+  }
+  const _safetyTimer = setTimeout(() => {
+    console.warn('[Boot] Safety timeout — revelando app offline');
+    _safeReveal();
+  }, 4000);
+
   // Verifica sessão Supabase ANTES de revelar o app
   try {
     const sb = await _getSupabase();
@@ -4278,16 +4346,18 @@ async function _showApp() {
     const session = data?.session;
     const skipped = localStorage.getItem('ct_auth_skipped');
 
+    clearTimeout(_safetyTimer);
+
     if (!session && !skipped) {
-      // Sem sessão e não optou por pular — mostrar tela de login
+      // Sem sessão — revelar app E mostrar tela de login como overlay
+      _safeReveal();
       _showAuthScreen();
-      // Ouvir quando fizer login para revelar o app
       Auth.onAuthChange(async (event, sess) => {
         if (event === 'SIGNED_IN' && sess) {
           db._userId = sess.user.id;
           save();
           _hideAuthScreen();
-          _revealApp();
+          renderApp();
           await _checkMigration(sess.user);
           if (sess.user.email === ADMIN_EMAIL) {
             toast('✅ Bem-vindo, Admin!', 2000);
@@ -4301,11 +4371,9 @@ async function _showApp() {
       return;
     }
 
-    // Tem sessão ou optou por pular
     if (session) {
       db._userId = session.user.id;
       save();
-      // Escutar mudanças de sessão em background
       Auth.onAuthChange(async (event, sess) => {
         if (event === 'SIGNED_OUT') { _showAuthScreen(); }
         if (event === 'SIGNED_IN' && sess) {
@@ -4317,10 +4385,10 @@ async function _showApp() {
       setTimeout(() => Sync.download().then(() => renderApp()), 1200);
     }
   } catch(e) {
-    // Supabase não disponível (sem HTTPS) — mostrar app direto
+    clearTimeout(_safetyTimer);
     console.log('[Auth] Offline mode:', e.message);
   }
-  _revealApp();
+  _safeReveal();
 }
 
 function _revealApp() {
@@ -4508,8 +4576,11 @@ async function authSendMagicLink() {
   if (!email || !email.includes('@')) {
     toast('⚠️ Digite um email válido'); return;
   }
-  // Verificar acesso beta
-  if (!Auth._isAllowed(email)) {
+  // Verificar acesso beta no servidor
+  const btn = document.getElementById('auth-send-btn');
+  if (btn) { btn.textContent = 'Verificando...'; btn.disabled = true; }
+  const allowed = await Auth._isAllowedAsync(email);
+  if (!allowed) {
     const card = document.getElementById('auth-login-card');
     if (card) card.innerHTML =
       '<div style="text-align:center;padding:20px 0">'
@@ -4521,7 +4592,6 @@ async function authSendMagicLink() {
       + '</div>';
     return;
   }
-  const btn = document.getElementById('auth-send-btn');
   if (btn) { btn.textContent = 'Enviando...'; btn.disabled = true; }
 
   const result = await Auth.sendMagicLink(email);
@@ -5617,7 +5687,7 @@ function navToDieta() {
 const SPECIAL_DATES = {
   '01/01': '🎆', '25/12': '🎄', '31/10': '🎃',
   '14/02': '💝', '12/06': '💝', '01/05': '🎉',
-  '07/09': '🇧🇷', '20/11': '✊', '01/01': '🎆',
+  '07/09': '🇧🇷', '20/11': '✊',
 };
 
 // Weekly goal: how many days to complete per week (default 5)
@@ -7297,6 +7367,7 @@ function saveStructuredDiet(structuredDiet) {
   save();
   Sync.uploadDiet().catch(()=>{}); // sincroniza plano alimentar automaticamente
 }
+/**
  * Called after parseDiet() succeeds.
  */
 function processStructuredDiet(legacyMeals) {
@@ -7310,10 +7381,174 @@ function processStructuredDiet(legacyMeals) {
 // ╚══════════════════════════════════════════════════════════════════╝
 //  DIET PARSER
 const OPTIONAL_KEYWORDS=['salada','vegetais','verduras','folhas verdes','legumes à vontade'];
-const IGNORE_KEYWORDS=['(tabela)','tabela de alimentos','ingestão de água','nome:','protocolo','dr.','saúde e performance','orientações'];
+const IGNORE_KEYWORDS=['(tabela)','tabela de alimentos','ingestão de água','nome:','protocolo','dr.','saúde e performance','orientações','opção final de semana','comer na padaria','página ','prescrito em','dúvidas e feedbacks','suplementação','cafeína','creatina','leia com atenção','dieta\n','caso você','caso na sua','cuidado com','boas marcas','dose:','horário:','frequência:','• dose','observações:','vegetais à vontade =','quando não consumir','nos dias que','polpa de fruta','tipo de vegetal','adoçante'];
 const MEAL_TRIGGERS=['primeira','segunda','terceira','quarta','quinta','sexta','sétima','setima','desjejum','café da manhã','cafe da manha','colação','colacao','lanche','almoço','almoco','jantar','ceia','pré-treino','pre-treino','pos-treino','pós-treino','refeição','refeicao'];
 
+// ── Detecta qual formato é o texto da dieta ──────────────────────────
+function detectDietFormat(raw) {
+  // Formato 2 (Manoel Victor): tem padrão "HH:MM - Nome" em linha própria
+  if (/^\d{2}:\d{2}\s*[-–]\s*\w/m.test(raw)) return 'table';
+  // Formato 1 (Dr. Rômulo): tem "REFEIÇÃO" em maiúsculas com número
+  if (/\b(PRIMEIRA|SEGUNDA|TERCEIRA|QUARTA|QUINTA|SEXTA|SÉTIMA)\s+REFEIÇÃO/i.test(raw)) return 'numbered';
+  return 'numbered'; // fallback
+}
+
+// ── Parser Formato 2: tabela com horário (Manoel Victor) ─────────────
+// Estrutura: "HH:MM - Nome" → tabela com "Alimento | Quantidade (Xg)"
+// OPÇÕEs são capturadas como informativo separado (sem cálculo de calorias)
+function parseDietTableFormat(raw) {
+  const lines = raw.split('\n').map(l => l.trim()).filter(l => l);
+  const meals = [];
+  const opcoes = []; // seções informativas (OPÇÃO - SANDUÍCHE, etc.)
+  let cur = null;
+  let curOpcao = null; // bloco OPÇÃO atual
+  let curSubstTarget = null;
+  let collectingSubst = false;
+
+  const mealHeaderRe = /^(\d{2}:\d{2})\s*[-–]\s*(.+)$/;
+  const opcaoRe = /^OPÇÃO\b/i; // captura OPÇÃO - SANDUÍCHE, OPÇÃO (MACARRÃO), OPÇÃO FINAL DE SEMANA
+  const substHeaderRe = /^[•·]\s*Op[cç][oõ]es de substitui[çc][aã]o para (.+?):\s*$/i;
+  const pageFooterRe = /^Página \d+\/\d+/i;
+  const observRe = /^Observa[çc][oõ]es:/i;
+
+  function extractGrams(qty) {
+    const m = qty.match(/\((\d+(?:[,.]\d+)?)\s*g\)/i);
+    if (m) return parseFloat(m[1].replace(',', '.'));
+    if (/à vontade|a vontade/i.test(qty)) return 0;
+    const m2 = qty.match(/(\d+(?:[,.]\d+)?)\s*g\b/i);
+    if (m2) return parseFloat(m2[1].replace(',', '.'));
+    return 0;
+  }
+  function extractMl(qty) {
+    const m = qty.match(/\((\d+(?:[,.]\d+)?)\s*ml\)/i);
+    if (m) return parseFloat(m[1].replace(',', '.'));
+    const m2 = qty.match(/(\d+(?:[,.]\d+)?)\s*ml\b/i);
+    if (m2) return parseFloat(m2[1].replace(',', '.'));
+    return 0;
+  }
+  function fmtQty(qty) {
+    return qty.replace(/\s*\(\d+\s*(?:g|ml)\)$/i, '').trim();
+  }
+  function parseTableRow(line) {
+    const m = line.match(/^(.+?)\s{2,}(\d.*|À vontade.*|A vontade.*)$/i);
+    if (m) return { name: m[1].trim(), qty: m[2].trim() };
+    const parts = line.split('\t');
+    if (parts.length === 2) return { name: parts[0].trim(), qty: parts[1].trim() };
+    return null;
+  }
+  function parseSubstLine(line) {
+    const parts = line.split(/\s*-\s*ou\s*-\s*/i).map(p => p.trim()).filter(p => p);
+    return parts.map(p => {
+      const grams = extractGrams(p) || extractMl(p);
+      const namePart = p.replace(/\s*[-–]\s*[\d.,]+.*$/, '').replace(/\s*\([\d.,]+\s*(?:g|ml)\)$/i, '').trim();
+      return { name: namePart || p, grams, text: p };
+    }).filter(s => s.name.length > 1);
+  }
+
+  // Extrai nome da OPÇÃO: "OPÇÃO - SANDUÍCHE" → "Sanduíche"
+  function parseOpcaoTitle(line) {
+    return line.replace(/^OPÇÃO\s*[-–(]?\s*/i, '').replace(/\)$/, '').trim();
+  }
+
+  let inOpcao = false;
+
+  lines.forEach(line => {
+    if (pageFooterRe.test(line)) return;
+    if (observRe.test(line)) { collectingSubst = false; curSubstTarget = null; return; }
+
+    // Cabeçalho OPÇÃO → capturar como informativo
+    if (opcaoRe.test(line)) {
+      inOpcao = true;
+      collectingSubst = false;
+      curSubstTarget = null;
+      if (curOpcao && curOpcao.items.length > 0) opcoes.push(curOpcao);
+      curOpcao = { title: fmtTitle(parseOpcaoTitle(line)), items: [] };
+      return;
+    }
+
+    // Cabeçalho de refeição com horário → sai do modo OPÇÃO
+    const headerMatch = line.match(mealHeaderRe);
+    if (headerMatch) {
+      inOpcao = false;
+      collectingSubst = false;
+      curSubstTarget = null;
+      if (curOpcao && curOpcao.items.length > 0) { opcoes.push(curOpcao); curOpcao = null; }
+      if (cur && cur.items.length > 0) meals.push(cur);
+      cur = { title: fmtTitle(headerMatch[2].trim()), time: headerMatch[1], items: [], _substMap: {} };
+      return;
+    }
+
+    // Dentro de bloco OPÇÃO → capturar itens como texto informativo (sem kcal)
+    if (inOpcao && curOpcao) {
+      if (substHeaderRe.test(line)) return; // ignora cabeçalhos de substituição dentro de OPÇÃO
+      if (IGNORE_KEYWORDS.some(k => line.toLowerCase().startsWith(k))) return;
+      const row = parseTableRow(line);
+      if (row && row.name.length > 1 && !IGNORE_KEYWORDS.some(k => row.name.toLowerCase().includes(k))) {
+        const optional = /à vontade|a vontade/i.test(row.qty);
+        curOpcao.items.push({
+          text: row.name,
+          quantity: fmtQty(row.qty),
+          optional,
+        });
+      }
+      return;
+    }
+
+    // Cabeçalho de substituição
+    const substHeader = line.match(substHeaderRe);
+    if (substHeader) {
+      curSubstTarget = substHeader[1].trim().toLowerCase();
+      collectingSubst = true;
+      return;
+    }
+
+    // Substituições inline
+    if (collectingSubst && curSubstTarget && cur) {
+      if (IGNORE_KEYWORDS.some(k => line.toLowerCase().startsWith(k))) { collectingSubst = false; return; }
+      if (!cur._substMap[curSubstTarget]) cur._substMap[curSubstTarget] = [];
+      const substs = parseSubstLine(line);
+      if (substs.length > 0) cur._substMap[curSubstTarget].push(...substs);
+      return;
+    }
+
+    // Item da tabela principal
+    if (cur && !collectingSubst) {
+      const row = parseTableRow(line);
+      if (row && row.name.length > 1 && !IGNORE_KEYWORDS.some(k => row.name.toLowerCase().includes(k))) {
+        const grams = extractGrams(row.qty) || extractMl(row.qty);
+        const optional = /à vontade|a vontade/i.test(row.qty);
+        cur.items.push({ text: row.name, name: row.name, quantity: fmtQty(row.qty), grams, done: false, optional, calories: 0, substitutions: [] });
+      }
+    }
+  });
+
+  if (curOpcao && curOpcao.items.length > 0) opcoes.push(curOpcao);
+  if (cur && cur.items.length > 0) meals.push(cur);
+
+  // Associar substituições
+  meals.forEach(meal => {
+    if (!meal._substMap) return;
+    meal.items.forEach(item => {
+      const key = item.name.toLowerCase();
+      const matchKey = Object.keys(meal._substMap).find(k => key.includes(k) || k.includes(key) || key.split(' ').some(w => w.length > 3 && k.includes(w)));
+      if (matchKey) {
+        item.substitutions = meal._substMap[matchKey].map(s => ({ name: s.name, grams: s.grams, calories: 0, text: s.text }));
+      }
+    });
+    delete meal._substMap;
+  });
+
+  // Guardar opções informativas para renderização
+  if (opcoes.length > 0) {
+    meals._opcoes = opcoes;
+  }
+
+  return meals;
+}
+
 function parseDiet(raw){
+  if (detectDietFormat(raw) === 'table') return parseDietTableFormat(raw);
+  // Formato 1: numerado (Dr. Rômulo)
   raw=raw.replace(/(primeira|segunda|terceira|quarta|quinta|sexta|sétima|setima)(refeição)/gi,'$1 $2');
   raw=raw.replace(/(refeição)(\d)/gi,'$1 $2');
   raw=raw.replace(/([A-ZÁÀÃÂÉÊÍÓÔÕÚÜÇ]{3,})(OU|DE|E\s)/g,'$1 $2');
@@ -7325,33 +7560,77 @@ function parseDiet(raw){
   const lines=raw.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
   const meals=[];let cur=null;
   const isHeader=l=>{const lo=l.toLowerCase();return(l.endsWith(':')||(l===l.toUpperCase()&&l.length>4)||MEAL_TRIGGERS.some(t=>lo.startsWith(t)||lo.includes(' '+t+' ')||lo.includes(t+' ')))&&MEAL_TRIGGERS.some(t=>lo.includes(t));};
-  const cleanH=l=>l.replace(/^(primeira|segunda|terceira|quarta|quinta|sexta|sétima|setima)\s+refeição\s*[–\-—]+\s*/i,'').replace(/refeição\s*\d+\s*[–\-—]+\s*/i,'').replace(/[:\-–—]+$/,'').replace(/^\d+[\.\)]\s*/,'').trim();
-  const cleanI=l=>l.replace(/^\d+[\)\.]\s*/,'').replace(/^[-•\*–—]\s*/,'').trim();
+  const cleanH=l=>l.replace(/^(primeira|segunda|terceira|quarta|quinta|sexta|sétima|setima)\s+refeição\s*[–\-—]+\s*/i,'').replace(/refeição\s*\d+\s*[–\-—]+\s*/i,'').replace(/[:\-–—]+$/,'').replace(/^\d+[\.\ )]\s*/,'').trim();
+  const cleanI=l=>l.replace(/^\d+[\)\.]?\s*/,'').replace(/^[-•\*–—]\s*/,'').trim();
   const isIgnore=l=>IGNORE_KEYWORDS.some(k=>l.toLowerCase().includes(k.toLowerCase()));
   const isOptional=l=>OPTIONAL_KEYWORDS.some(k=>l.toLowerCase().includes(k.toLowerCase()));
   const shouldMerge=(prev,cur)=>{if(!prev)return false;const pt=prev.text||'';if(/\bou\s*$/i.test(pt)||/\bde\s*$/i.test(pt)||/,\s*$/.test(pt))return true;if(/^(ou|e |de |do |da |com |sem |para )/i.test(cur))return true;return false;};
+  function parseF1Item(rawText){
+    const text=rawText.trim();
+    const parts=text.split(/\s+OU\s+/i).map(p=>p.trim()).filter(p=>p);
+    const main=parts[0]||text;
+    const grams=(()=>{const m=main.match(/(\d+(?:[.,]\d+)?)\s*[Gg]\b/);return m?parseFloat(m[1]):0;})();
+    const subs=parts.slice(1).map(p=>({name:p.replace(/^\d+(?:[.,]\d+)?\s*[Gg]\s+[Dd][Ee]\s+/,'').replace(/^\d+(?:[.,]\d+)?\s*[Gg]\b\s*/,'').trim(),grams:(()=>{const m=p.match(/(\d+(?:[.,]\d+)?)\s*[Gg]\b/);return m?parseFloat(m[1]):0;})(),calories:0,text:p})).filter(s=>s.name.length>1);
+    return{text:main,name:main.replace(/^\d+(?:[.,]\d+)?\s*[Gg]\s+[Dd][Ee]\s+/i,'').replace(/^\d+(?:[.,]\d+)?\s*[Gg]\b\s*/i,'').trim(),quantity:grams?grams+'g':'',grams,done:false,optional:isOptional(main),calories:0,substitutions:subs};
+  }
   lines.forEach(line=>{
     if(isIgnore(line))return;
     if(isHeader(line)){if(cur&&cur.items.length>0)meals.push(cur);const t=cleanH(line);cur={title:fmtTitle(t.length>2?t:line.replace(/[:\-–—]+$/,'').trim()),items:[]};}
-    else if(cur){const item=cleanI(line);if(item.length<=2)return;const optional=isOptional(item);const lastItem=cur.items[cur.items.length-1];if(lastItem&&shouldMerge(lastItem,item)){lastItem.text=lastItem.text+' '+item;}else{cur.items.push({text:item,done:false,optional});}}
+    else if(cur){const item=cleanI(line);if(item.length<=2)return;const lastItem=cur.items[cur.items.length-1];if(lastItem&&shouldMerge(lastItem,item)){lastItem.text=lastItem.text+' '+item;lastItem.name=lastItem.text;}else{cur.items.push(parseF1Item(item));}}
   });
   if(cur&&cur.items.length>0)meals.push(cur);
   if(!meals.length){
-    raw.split(/\n\s*\n/).filter(b=>b.trim().length>5).forEach(block=>{const ls=block.split('\n').map(l=>l.trim()).filter(l=>l);if(ls.length>=2)meals.push({title:fmtTitle(ls[0]),items:ls.slice(1).filter(l=>l.length>2&&!isIgnore(l)).map(t=>({text:cleanI(t),done:false,optional:isOptional(t)}))});});
+    raw.split(/\n\s*\n/).filter(b=>b.trim().length>5).forEach(block=>{const ls=block.split('\n').map(l=>l.trim()).filter(l=>l);if(ls.length>=2)meals.push({title:fmtTitle(ls[0]),items:ls.slice(1).filter(l=>l.length>2&&!isIgnore(l)).map(t=>parseF1Item(cleanI(t)))});});
   }
   return meals;
 }
 function fmtTitle(s){if(!s)return'Refeição';s=s.replace(/(primeira|segunda|terceira|quarta|quinta|sexta|sétima|setima)(refeição)/gi,'$1 $2');return s.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()).replace(/\bDe\b/g,'de').replace(/\bOu\b/g,'ou').trim();}
+
+// Cálculo de calorias via IA para itens da dieta sem caloria
+async function calcDietCaloriesAI(meals){
+  if(!meals||!meals.length)return meals;
+  const items=[];
+  meals.forEach((meal,mi)=>{
+    (meal.items||[]).forEach((item,ii)=>{
+      if(item.calories>0||item.optional)return;
+      items.push({mi,ii,name:item.name||item.text,grams:item.grams,qty:item.quantity});
+    });
+  });
+  if(!items.length)return meals;
+  const prompt='Você é nutricionista especialista em tabelas nutricionais brasileiras (TACO/IBGE).\nPara cada alimento abaixo, retorne APENAS um JSON array com as calorias aproximadas.\nResponda SOMENTE o JSON, sem texto adicional, sem markdown.\n\nAlimentos:\n'+items.map((it,i)=>`${i}. ${it.name}${it.grams?' — '+it.grams+'g':it.qty?' — '+it.qty:''}`).join('\n')+'\n\nFormato (mesmo número de itens, mesma ordem):\n[{"i":0,"kcal":280},{"i":1,"kcal":75},...]\n\nRegras:\n- Se "à vontade" ou sem quantidade, use 0\n- Calcule com base nos gramas informados\n- Para unidades (ex: 2 ovos), estime peso padrão\n- Arredonde para inteiro';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const data=await res.json();
+    const text=(data.content||[]).map(c=>c.text||'').join('');
+    const results=JSON.parse(text.replace(/```json|```/g,'').trim());
+    results.forEach(r=>{
+      if(r.i>=0&&r.i<items.length){const{mi,ii}=items[r.i];if(meals[mi]&&meals[mi].items[ii])meals[mi].items[ii].calories=r.kcal||0;}
+    });
+  }catch(e){console.warn('[Diet] Calorie AI calc failed:',e.message);}
+  return meals;
+}
+
 async function processDiet(slot){
   const t=document.getElementById('rawTxt'+slot).value;
   if(!t.trim()){toast('⚠️ Nenhum texto');return;}
-  const m=parseDiet(t);
+  let m=parseDiet(t);
   if(!m.length){toast('❌ Nenhuma refeição encontrada');return;}
-  processStructuredDiet(m);  // build structured version before overwriting db.meals
+  // Salvar opções informativas (Formato 2)
+  if(m._opcoes&&m._opcoes.length>0){
+    db.dietOpcoes=m._opcoes;
+    delete m._opcoes;
+  } else {
+    db.dietOpcoes=[];
+  }
+  processStructuredDiet(m);
   db.meals=m;db.lastReset=todayStr();save();
   Sync.uploadDiet().catch(()=>{});
   closeSheet('sheetChangeDiet');renderDiet();refreshToday('diet');
-  toast('✓ '+m.length+' refeições carregadas');
+  const opcaoTxt=db.dietOpcoes&&db.dietOpcoes.length?' · '+db.dietOpcoes.length+' opções salvas':'';
+  toast('✓ '+m.length+' refeições carregadas'+opcaoTxt+' — calculando calorias...');
+  m=await calcDietCaloriesAI(m);
+  db.meals=m;save();processStructuredDiet(m);renderDiet();refreshToday('diet');
+  toast('✓ Calorias calculadas!');
 }
 
 // ── Diet: Render & Interaction ──────────────────────────────────────
@@ -7427,7 +7706,6 @@ function removeFreeMeal(){
 function renderFreeMealBanner(){
   const footer=document.getElementById('dietFooter');
   if(!footer)return;
-  // Remove existing banner if any
   const existing=document.getElementById('freeMealBanner');
   if(existing)existing.remove();
   if(!freeMealActive())return;
@@ -7449,6 +7727,63 @@ function renderFreeMealBanner(){
     +'<button class="btn btn-danger btn-sm" style="font-size:11px" onclick="removeFreeMeal()">🗑 Remover</button>'
     +'</div>';
   footer.prepend(banner);
+}
+
+// ── Renderiza seção informativa das opções alternativas ───────────────
+function renderDietOpcoes() {
+  // Remove seção anterior
+  const existing = document.getElementById('dietOpcoesSection');
+  if (existing) existing.remove();
+
+  const opcoes = db.dietOpcoes;
+  if (!opcoes || !opcoes.length) return;
+
+  const list = document.getElementById('mealList');
+  if (!list) return;
+
+  const section = document.createElement('div');
+  section.id = 'dietOpcoesSection';
+  section.className = 'diet-opcoes-section';
+
+  section.innerHTML =
+    '<div class="diet-opcoes-header" onclick="toggleDietOpcoes()">'
+    + '<div class="diet-opcoes-label">'
+    + '<span style="font-size:16px">📋</span>'
+    + '<div>'
+    + '<div class="diet-opcoes-title">Opções Alternativas</div>'
+    + '<div class="diet-opcoes-sub">' + opcoes.length + ' opção' + (opcoes.length > 1 ? 'ões' : '') + ' do nutricionista — somente informativo</div>'
+    + '</div>'
+    + '</div>'
+    + '<span class="diet-opcoes-chevron" id="dietOpcoesChevron">▾</span>'
+    + '</div>'
+    + '<div class="diet-opcoes-body" id="dietOpcoesBody" style="display:none">'
+    + opcoes.map(op =>
+        '<div class="diet-opcao-card">'
+        + '<div class="diet-opcao-title">' + escHtml(op.title) + '</div>'
+        + op.items.map(it =>
+            '<div class="diet-opcao-item">'
+            + '<span class="diet-opcao-dot">·</span>'
+            + '<div class="diet-opcao-item-body">'
+            + '<span class="diet-opcao-name">' + escHtml(it.text) + '</span>'
+            + (it.quantity ? '<span class="diet-opcao-qty">' + escHtml(it.quantity) + '</span>' : '')
+            + (it.optional ? '<span class="optional-tag">à vontade</span>' : '')
+            + '</div>'
+            + '</div>'
+          ).join('')
+        + '</div>'
+      ).join('')
+    + '</div>';
+
+  list.after(section);
+}
+
+function toggleDietOpcoes() {
+  const body = document.getElementById('dietOpcoesBody');
+  const chev = document.getElementById('dietOpcoesChevron');
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (chev) chev.textContent = open ? '▾' : '▴';
 }
 
 // ── isStructuredDiet — true when db.structuredDiet has real items ──
@@ -7512,6 +7847,7 @@ function sdi_markAll(mi){
   });
   checkStreak();save();renderDiet();updateDietProgress();refreshToday('diet');
   Sync.uploadDiet().catch(()=>{});
+}
 function sdi_removeItem(mi,ii,e){
   e.stopPropagation();if(!confirm('Remover este item?'))return;
   db.structuredDiet.meals[mi].items.splice(ii,1);
@@ -7802,8 +8138,8 @@ function renderDiet(){
       list.appendChild(card);
       if(openCards.has(mi)){requestAnimationFrame(()=>{const b=document.getElementById('mb'+mi),c=document.getElementById('chev'+mi);if(b){b.classList.add('open');if(c)c.classList.add('open');}});}
     });
+    if(isStructuredDiet())sdi_updateDayKcalDisplay();
     return;
-  if(isStructuredDiet())sdi_updateDayKcalDisplay();
   }
   // ── Legacy flat mode
   db.meals.forEach((meal,mi)=>{
@@ -7825,21 +8161,25 @@ function renderDiet(){
       +'</div></div>'
       +'<div class="meal-body" id="mb'+mi+'">'
       +'<div class="item-list">'
-      +meal.items.map((item,ii)=>
-        '<div class="food-item'+(item.done?' ticked':'')+(item.optional?' optional':'')+'" id="fi'+mi+'_'+ii+'" onclick="toggleItem('+mi+','+ii+')">'
-        +'<div class="food-check">'+(item.done?'<span class="icon icon-check" style="width:11px;height:11px"></span>':'')+'</div>'
-        +'<span class="food-text">'+escHtml(item.text)+(item.optional?'<span class="optional-tag">opcional</span>':'')+'</span>'
-        +'<button class="food-del" onclick="removeItem('+mi+','+ii+',event)"><span class="icon icon-times"></span></button>'
-        +'</div>').join('')
+      +meal.items.map((item,ii)=>{
+        const hasSubs=Array.isArray(item.substitutions)&&item.substitutions.length>0;
+        const kcalBadge=item.calories>0?'<span style="font-family:Space Mono,monospace;font-size:9px;color:var(--muted2);margin-left:4px">'+item.calories+'kcal</span>':'';
+        const qtyBadge=item.quantity?'<span style="font-family:Space Mono,monospace;font-size:9px;color:var(--muted);margin-left:4px">'+escHtml(item.quantity)+'</span>':'';
+        const subsBtn=hasSubs?'<button class="food-subst-btn" onclick="event.stopPropagation();openSubstModal(\''+escHtml((item.name||item.text).replace(/'/g,''))+'\',\''+encodeURIComponent(JSON.stringify(item.substitutions))+'\')">⇄ '+item.substitutions.length+'</button>':'';
+        return '<div class="food-item'+(item.done?' ticked':'')+(item.optional?' optional':'')+'" id="fi'+mi+'_'+ii+'" onclick="toggleItem('+mi+','+ii+')">'
+          +'<div class="food-check">'+(item.done?'<span class="icon icon-check" style="width:11px;height:11px"></span>':'')+'</div>'
+          +'<span class="food-text">'+escHtml(item.name||item.text)+(item.optional?'<span class="optional-tag">opcional</span>':'')+qtyBadge+kcalBadge+'</span>'
+          +subsBtn
+          +'<button class="food-del" onclick="removeItem('+mi+','+ii+',event)"><span class="icon icon-times"></span></button>'
+          +'</div>';
+      }).join('')
       +(meal.items.length===0?'<div style="padding:10px 14px;color:var(--muted);font-size:12px">Sem itens</div>':'')
-      +'</div>'
-      +'<div class="meal-foot"><button class="btn btn-ghost btn-sm" onclick="quickAddItem('+mi+')"><span class="icon icon-plus"></span> Item</button></div>'
-      +'</div>';
     list.appendChild(card);
     requestAnimationFrame(()=>{updateMealMacrosDisplay(mi);});
     if(openCards.has(mi)){requestAnimationFrame(()=>{const b=document.getElementById('mb'+mi),c=document.getElementById('chev'+mi);if(b){b.classList.add('open');if(c)c.classList.add('open');}});}
   });
   renderFreeMealBanner();
+  renderDietOpcoes();
 }
 
 function keepCardState(mi){requestAnimationFrame(()=>{if(openCards.has(mi)){const b=document.getElementById('mb'+mi),c=document.getElementById('chev'+mi);if(b){b.classList.add('open');if(c)c.classList.add('open');}}});}
@@ -7898,7 +8238,7 @@ function updateDietProgress(){
   const rp=document.getElementById('ringPct');if(rp)rp.textContent=pct+'%';
   const bf=document.getElementById('barFill');if(bf)bf.style.width=pct+'%';
   const ds=document.getElementById('daySub');if(ds)ds.textContent=done+' de '+total+' itens obrigatórios';
-  document.getElementById('streakNum').textContent=db.dailyStreak?.count||db.streak||0;
+  const _snEl=document.getElementById('streakNum');if(_snEl)_snEl.textContent=db.dailyStreak?.count||db.streak||0;
 }
 function removeItem(mi,ii,e){e.stopPropagation();if(!confirm('Remover este item?'))return;db.meals[mi].items.splice(ii,1);save();renderDiet();keepCardState(mi);}
 function quickAddItem(mi){const t=prompt('Novo item:');if(t&&t.trim()){db.meals[mi].items.push({text:t.trim(),done:false,optional:false});save();renderDiet();keepCardState(mi);}}
@@ -7935,7 +8275,7 @@ function addMeal(){
 function checkStreak(){
   const all=db.meals.length>0&&db.meals.every(m=>m.items.filter(i=>!i.optional).every(i=>i.done));
   const today=todayStr();
-  if(all&&db.lastComplete!==today){db.streak++;db.lastComplete=today;toast('✓ Dieta concluída');}
+  if(all&&db.lastComplete!==today){db.lastComplete=today;toast('✓ Dieta concluída');}
 }
 
 // ══════════════════════════════════════════════════
@@ -8213,18 +8553,24 @@ function restoreBackup(){
   if(!code){res.textContent='⚠️ Cole o código acima';res.style.color='var(--orange)';return;}
   if(!code.startsWith('CT1:')){res.textContent='❌ Código inválido';res.style.color='var(--red)';return;}
   try{
-    const decoded=decodeURIComponent(escape(atob(code.slice(4))));
+    const decoded=new TextDecoder().decode(Uint8Array.from(atob(code.slice(4)),c=>c.charCodeAt(0)));
     const parsed=JSON.parse(decoded);
-    if(!parsed.meals&&!parsed.sessions&&!parsed.weight){throw new Error('empty');}
+    // Validação estrutural: checar tipos esperados antes de aceitar
+    if(!parsed||typeof parsed!=='object'){throw new Error('not-object');}
+    if(!Array.isArray(parsed.meals)&&!Array.isArray(parsed.sessions)&&!Array.isArray(parsed.weight)){throw new Error('empty');}
+    if(parsed.meals!==undefined&&!Array.isArray(parsed.meals)){throw new Error('invalid-meals');}
+    if(parsed.sessions!==undefined&&!Array.isArray(parsed.sessions)){throw new Error('invalid-sessions');}
+    if(parsed.weight!==undefined&&!Array.isArray(parsed.weight)){throw new Error('invalid-weight');}
     if(!confirm('Restaurar backup? Os dados atuais serão substituídos.'))return;
-    // Ensure required blocks exist after restore
-    if(!parsed.water)parsed.water={goal:3000,entries:[]};
-    if(!parsed.settings)parsed.settings={showDietTab:false};
-    if(!parsed.profile)parsed.profile={name:'',weight:0};
-    if(!parsed.dailyStreak)parsed.dailyStreak={count:0,lastDate:'',totalDays:0,history:[],bestStreak:0};
-    if(!parsed.missions)parsed.missions={lastDate:'',water:false,creatina:false,dieta:false,treino:false};
-    if(!parsed.creatina)parsed.creatina={streak:0,lastDate:'',startDate:''};
-    if(!parsed.insights)parsed.insights={lastShown:0,dismissed:[]};
+    // Garantir que todos os blocos obrigatórios existam após restore
+    if(!parsed.water||typeof parsed.water!=='object')parsed.water={goal:3000,entries:[]};
+    if(!Array.isArray(parsed.water.entries))parsed.water.entries=[];
+    if(!parsed.settings||typeof parsed.settings!=='object')parsed.settings={showDietTab:false};
+    if(!parsed.profile||typeof parsed.profile!=='object')parsed.profile={name:'',weight:0};
+    if(!parsed.dailyStreak||typeof parsed.dailyStreak!=='object')parsed.dailyStreak={count:0,lastDate:'',totalDays:0,history:[],bestStreak:0};
+    if(!parsed.missions||typeof parsed.missions!=='object')parsed.missions={lastDate:'',water:false,creatina:false,dieta:false,treino:false};
+    if(!parsed.creatina||typeof parsed.creatina!=='object')parsed.creatina={streak:0,lastDate:'',startDate:''};
+    if(!parsed.insights||typeof parsed.insights!=='object')parsed.insights={lastShown:0,dismissed:[]};
     db=parsed;save();
     // Após restaurar backup, sobe tudo para a nuvem se logado
     Sync.upload().then(r => { if(r?.ok) console.log('[Sync] Backup restaurado e enviado para nuvem'); }).catch(()=>{});
@@ -8624,6 +8970,38 @@ function closeCelebrate() {
   if (overlay) overlay.classList.remove('show');
 }
 
+// ── Modal de Substituições ───────────────────────────────────────────
+function openSubstModal(itemName, substsJson) {
+  const substs = JSON.parse(decodeURIComponent(substsJson));
+  const modal = document.getElementById('substModal');
+  const title = document.getElementById('substModalTitle');
+  const list  = document.getElementById('substModalList');
+  if (!modal || !title || !list) return;
+  title.textContent = itemName;
+  list.innerHTML = substs.length
+    ? substs.map(s => {
+        const qty = s.text
+          ? s.text.replace(/\s*-\s*ou\s*-?.*/i,'').trim()
+          : (s.grams ? s.grams + 'g' : '');
+        return '<div class="subst-item">'
+          + '<span class="subst-item-icon">⇄</span>'
+          + '<div class="subst-item-body">'
+          + '<div class="subst-item-name">' + escHtml(s.name) + '</div>'
+          + (qty ? '<div class="subst-item-qty">' + escHtml(qty) + '</div>' : '')
+          + '</div>'
+          + '</div>';
+      }).join('')
+    : '<div style="padding:20px 0;text-align:center;color:var(--muted);font-size:13px">Nenhuma substituição disponível</div>';
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSubstModal() {
+  const modal = document.getElementById('substModal');
+  if (modal) modal.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
 // ── Mission card pulse when completed ────────────────────────────────
 function pulseCard(cardEl) {
   if (!cardEl) return;
@@ -8832,11 +9210,14 @@ function closePartnerFullscreen() {
 
 const BACKUP_KEY = 'ct_autobackup';
 const BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24h
+let _backupIntervalId = null; // guarda o ID para não acumular setIntervals
 
 function autoBackupSave() {
   try {
     const now = Date.now();
-    const payload = { ts: now, data: JSON.stringify(db) };
+    // Armazena apenas o timestamp — o dado real já está em ct_v1 (KEY)
+    // Isso evita duplicar ~500KB de dados no localStorage a cada 24h
+    const payload = { ts: now, v: KEY };
     localStorage.setItem(BACKUP_KEY, JSON.stringify(payload));
     if (db.settings) db.settings._lastAutoBackup = now;
     save();
@@ -8852,7 +9233,11 @@ function autoBackupCheck() {
   }
   // Schedule next check
   const nextIn = BACKUP_INTERVAL_MS - (now - last);
-  setTimeout(() => { autoBackupSave(); setInterval(autoBackupSave, BACKUP_INTERVAL_MS); },
+  setTimeout(() => {
+    autoBackupSave();
+    if (_backupIntervalId) clearInterval(_backupIntervalId);
+    _backupIntervalId = setInterval(autoBackupSave, BACKUP_INTERVAL_MS);
+  },
     Math.max(0, nextIn));
 
   // Export semanal: oferece download do JSON a cada 7 dias
@@ -8903,7 +9288,16 @@ function autoBackupRestore() {
     const payload = JSON.parse(raw);
     const d = new Date(payload.ts);
     const dateStr = d.toLocaleDateString('pt-BR') + ' às ' + d.toTimeString().slice(0,5);
-    return { dateStr, data: JSON.parse(payload.data) };
+    // Lê o dado de ct_v1 (novo formato) ou do campo data (legado)
+    let data;
+    if (payload.data) {
+      data = JSON.parse(payload.data); // legado: dado embutido
+    } else {
+      const raw2 = localStorage.getItem(payload.v || KEY);
+      if (!raw2) { toast('⚠️ Dado do backup não encontrado'); return null; }
+      data = JSON.parse(raw2);
+    }
+    return { dateStr, data };
   } catch(e) { return null; }
 }
 
@@ -9346,89 +9740,31 @@ function deleteRoutine(id) {
 
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  MODULE: ADMIN — Acesso restrito ao administrador               ║
+// ║  Segurança: verificação real via sessão Supabase (server-side)  ║
 // ╚══════════════════════════════════════════════════════════════════╝
-const ADMIN_EMAIL    = 'felipebenevenuto@gmail.com';
-const ADMIN_PIN_HASH = 3035; // hash do PIN 290992
-
-function _hashPin(pin) {
-  return pin.split('').reduce(function(acc, c, i){ return acc + c.charCodeAt(0) * (i+7); }, 0);
-}
+const ADMIN_EMAIL = 'felipebenevenuto@gmail.com';
+// PIN e hash removidos — a proteção real é a sessão autenticada no Supabase.
+// Um hash client-side pode ser quebrado por força bruta no DevTools em segundos.
 
 var _isAdmin = false;
 function isAdmin() { return _isAdmin; }
 
-function _checkAdminPin() {
-  return new Promise(function(resolve) {
-    var ov = document.createElement('div');
-    ov.id = 'admin-pin-overlay';
-    ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.92);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:24px';
-
-    var box = document.createElement('div');
-    box.style.cssText = 'background:var(--card);border:1px solid rgba(212,255,0,.2);border-radius:16px;padding:28px 24px;width:100%;max-width:320px;text-align:center';
-
-    var ico = document.createElement('div');
-    ico.style.cssText = 'font-size:32px;margin-bottom:12px';
-    ico.textContent = '🔐';
-
-    var title = document.createElement('div');
-    title.style.cssText = 'font-family:Bebas Neue,sans-serif;font-size:22px;letter-spacing:2px;color:var(--acid);margin-bottom:6px';
-    title.textContent = 'ADMIN';
-
-    var sub = document.createElement('div');
-    sub.style.cssText = 'font-size:11px;color:var(--muted2);margin-bottom:20px;font-family:Space Mono,monospace';
-    sub.textContent = 'Digite o PIN de acesso';
-
-    var inp = document.createElement('input');
-    inp.id = 'admin-pin-input';
-    inp.type = 'password';
-    inp.setAttribute('inputmode', 'numeric');
-    inp.maxLength = 6;
-    inp.placeholder = '••••••';
-    inp.style.cssText = 'width:100%;text-align:center;font-size:24px;letter-spacing:6px;background:#0c0c0c;border:1px solid var(--border2);color:var(--acid);border-radius:9px;padding:12px;outline:none;font-family:Space Mono,monospace';
-
-    var errEl = document.createElement('div');
-    errEl.id = 'admin-pin-err';
-    errEl.style.cssText = 'font-size:10px;color:var(--red);margin-top:8px;font-family:Space Mono,monospace;min-height:16px';
-
-    var row = document.createElement('div');
-    row.style.cssText = 'display:flex;gap:8px;margin-top:12px';
-
-    var cancelBtn = document.createElement('button');
-    cancelBtn.style.cssText = 'flex:1;height:44px;border-radius:9px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-family:Bebas Neue,sans-serif;font-size:16px;letter-spacing:1px;cursor:pointer';
-    cancelBtn.textContent = 'Cancelar';
-    cancelBtn.onclick = function(){ ov.remove(); resolve(false); };
-
-    var okBtn = document.createElement('button');
-    okBtn.id = 'admin-pin-btn';
-    okBtn.style.cssText = 'flex:1;height:44px;border-radius:9px;border:none;background:var(--acid);color:#000;font-family:Bebas Neue,sans-serif;font-size:16px;letter-spacing:1px;cursor:pointer';
-    okBtn.textContent = 'Entrar';
-
-    var attempt = function() {
-      if (_hashPin(inp.value.trim()) === ADMIN_PIN_HASH) {
-        _isAdmin = true;
-        ov.remove();
-        resolve(true);
-      } else {
-        errEl.textContent = 'PIN incorreto';
-        inp.value = '';
-        inp.focus();
-      }
-    };
-    okBtn.onclick = attempt;
-    inp.addEventListener('keydown', function(e){ if(e.key==='Enter') attempt(); });
-
-    row.appendChild(cancelBtn);
-    row.appendChild(okBtn);
-    box.appendChild(ico);
-    box.appendChild(title);
-    box.appendChild(sub);
-    box.appendChild(inp);
-    box.appendChild(errEl);
-    box.appendChild(row);
-    ov.appendChild(box);
-    document.body.appendChild(ov);
-    setTimeout(function(){ inp.focus(); }, 100);
-  });
+// Verifica se o usuário autenticado é admin — sem prompt de PIN
+async function _checkAdminPin() {
+  try {
+    const sb = await _getSupabase();
+    const { data } = await sb.auth.getSession();
+    const email = data?.session?.user?.email || '';
+    if (email === ADMIN_EMAIL) {
+      _isAdmin = true;
+      return true;
+    }
+    // Email autenticado não é admin
+    return false;
+  } catch(e) {
+    console.warn('[Admin] Verificação falhou:', e.message);
+    return false;
+  }
 }
 
 async function openAdminPanel() {
@@ -9579,9 +9915,11 @@ async function _getSupabase() {
   if (!window.supabase) {
     await new Promise((resolve, reject) => {
       const s = document.createElement('script');
+      // Timeout de 6s — evita travar em redes lentas
+      const _timer = setTimeout(() => reject(new Error('Supabase SDK timeout')), 6000);
       s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-      s.onload = resolve;
-      s.onerror = () => reject(new Error('Falha ao carregar Supabase SDK'));
+      s.onload = () => { clearTimeout(_timer); resolve(); };
+      s.onerror = () => { clearTimeout(_timer); reject(new Error('Falha ao carregar Supabase SDK')); };
       document.head.appendChild(s);
     });
   }
@@ -9634,16 +9972,24 @@ const Auth = {
   },
 
   // ── Lista de emails com acesso beta ─────────────────────────────
-  // Adicione emails aqui para liberar acesso. Deixe vazio [] para liberar para todos.
-  _allowedEmails: [
-    'liviamazinebenevenuto@gmail.com',
-    'felipebenevenuto@gmail.com',
-    'kmartinso@outlook.com',
-  ],
+  // SEGURANÇA: a lista real está na tabela beta_access no Supabase (com RLS).
+  // Este array é usado apenas como cache local para evitar round-trip no fluxo de UI.
+  // Não adicione emails diretamente aqui — use o painel admin ou o Supabase.
+  _allowedEmails: [],
 
-  // Verifica se o email tem acesso
+  // Verifica se o email tem acesso — consulta o servidor se a lista local estiver vazia
+  async _isAllowedAsync(email) {
+    try {
+      const sb = await _getSupabase();
+      const { data } = await sb.from('beta_access').select('email').eq('email', email.toLowerCase().trim()).single();
+      return !!data;
+    } catch(e) {
+      // Fallback: sem tabela beta_access = acesso liberado para todos (modo dev)
+      return true;
+    }
+  },
   _isAllowed(email) {
-    if (!this._allowedEmails.length) return true; // lista vazia = todos permitidos
+    if (!this._allowedEmails.length) return true; // sem lista local = liberado (verificação real é async)
     return this._allowedEmails
       .map(e => e.toLowerCase().trim())
       .includes(email.toLowerCase().trim());
@@ -10565,7 +10911,9 @@ function exportBackupJSON() {
 
 function generateBackup() {
   const payload = JSON.stringify(db);
-  const encoded = btoa(unescape(encodeURIComponent(payload)));
+  // Codificação UTF-8 correta sem funções depreciadas
+  const bytes = new TextEncoder().encode(payload);
+  const encoded = btoa(String.fromCharCode(...bytes));
   const code = 'CT1:' + encoded;
   // Update both backup code elements
   ['backupCode','backupCode2'].forEach(id => {
@@ -10584,17 +10932,21 @@ function restoreBackup2() {
   if (!code) { if(res) { res.textContent='⚠️ Cole o código acima'; res.style.color='var(--orange)'; } return; }
   if (!code.startsWith('CT1:')) { if(res) { res.textContent='❌ Código inválido'; res.style.color='var(--red)'; } return; }
   try {
-    const decoded = decodeURIComponent(escape(atob(code.slice(4))));
+    const decoded = new TextDecoder().decode(Uint8Array.from(atob(code.slice(4)),c=>c.charCodeAt(0)));
     const parsed = JSON.parse(decoded);
-    if (!parsed.meals && !parsed.sessions && !parsed.weight) throw new Error('empty');
+    if (!parsed || typeof parsed !== 'object') throw new Error('not-object');
+    if (!Array.isArray(parsed.meals) && !Array.isArray(parsed.sessions) && !Array.isArray(parsed.weight)) throw new Error('empty');
+    if (parsed.meals !== undefined && !Array.isArray(parsed.meals)) throw new Error('invalid-meals');
+    if (parsed.sessions !== undefined && !Array.isArray(parsed.sessions)) throw new Error('invalid-sessions');
     if (!confirm('Restaurar backup? Os dados atuais serão substituídos.')) return;
-    if (!parsed.water) parsed.water = { goal:3000, entries:[] };
-    if (!parsed.settings) parsed.settings = { showDietTab:false };
-    if (!parsed.profile) parsed.profile = {name:'', weight:0};
-    if (!parsed.dailyStreak) parsed.dailyStreak = {count:0,lastDate:'',totalDays:0,history:[],bestStreak:0};
-    if (!parsed.missions) parsed.missions = {lastDate:'',water:false,creatina:false,dieta:false,treino:false};
-    if (!parsed.creatina) parsed.creatina = {streak:0,lastDate:'',startDate:''};
-    if (!parsed.insights) parsed.insights = {lastShown:0,dismissed:[]};
+    if (!parsed.water || typeof parsed.water !== 'object') parsed.water = { goal:3000, entries:[] };
+    if (!Array.isArray(parsed.water.entries)) parsed.water.entries = [];
+    if (!parsed.settings || typeof parsed.settings !== 'object') parsed.settings = { showDietTab:false };
+    if (!parsed.profile || typeof parsed.profile !== 'object') parsed.profile = {name:'', weight:0};
+    if (!parsed.dailyStreak || typeof parsed.dailyStreak !== 'object') parsed.dailyStreak = {count:0,lastDate:'',totalDays:0,history:[],bestStreak:0};
+    if (!parsed.missions || typeof parsed.missions !== 'object') parsed.missions = {lastDate:'',water:false,creatina:false,dieta:false,treino:false};
+    if (!parsed.creatina || typeof parsed.creatina !== 'object') parsed.creatina = {streak:0,lastDate:'',startDate:''};
+    if (!parsed.insights || typeof parsed.insights !== 'object') parsed.insights = {lastShown:0,dismissed:[]};
     db = parsed; save(); location.reload();
   } catch(e) { if(res) { res.textContent='❌ Código inválido ou corrompido'; res.style.color='var(--red)'; } }
 }
@@ -13428,6 +13780,17 @@ function logWaterQuick(btn, ml) {
 
 </script>
 <div id="wm-flash-overlay"><div id="wm-flash-msg">Meta concluída 💧</div></div>
+
+<!-- ══ MODAL: SUBSTITUIÇÕES ══ -->
+<div class="subst-modal-overlay" id="substModal" onclick="if(event.target===this)closeSubstModal()">
+  <div class="subst-modal-sheet">
+    <div class="subst-modal-handle"></div>
+    <button class="subst-modal-close" onclick="closeSubstModal()">×</button>
+    <div class="subst-modal-title" id="substModalTitle">Substituições</div>
+    <div class="subst-modal-sub">escolha uma alternativa equivalente</div>
+    <div id="substModalList"></div>
+  </div>
+</div>
 
 <!-- ══ BENEAPPS WATERMARK ══ -->
 <img
