@@ -2331,16 +2331,8 @@ select option{background:var(--card2)}
           <div class="ob-feat-card"><div class="ob-feat-icon">☁️</div><div class="ob-feat-body"><div class="ob-feat-name">Nuvem</div><div class="ob-feat-sub">Sincronizado em qualquer dispositivo</div></div></div>
         </div>
 
-        <!-- Botão Começar -->
-        <button class="ob-start-btn" onclick="obGoNext()">
-          <svg width="14" height="18" viewBox="0 0 24 32" fill="none">
-            <polygon class="ob-bolt-btn" points="14,0 4,18 12,18 10,32 20,14 12,14" fill="#000"/>
-          </svg>
-          Começar
-        </button>
-
         <!-- BeneApps -->
-        <div class="ob-beneapps">
+        <div class="ob-beneapps" style="margin-top:8px">
           <div class="ob-beneapps-left">
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
               <rect x="1" y="1" width="8" height="8" rx="2" fill="#d4ff00"/>
@@ -11081,16 +11073,19 @@ function obGoTo(step) {
     const dot = document.getElementById('obDot' + i);
     if (dot) dot.classList.toggle('on', i === obCurrentStep);
   }
-  // Nav: no step 0 esconde nav (tem botão próprio); a partir do step 1 mostra
+  // Nav: sempre visível — step 0 mostra "Começar", últimos "Vamos lá!", demais "Próximo"
   const nav = document.getElementById('obNav');
   const back = document.getElementById('obBack');
   const next = document.getElementById('obNext');
-  if (nav) nav.style.display = obCurrentStep === 0 ? 'none' : '';
+  if (nav) nav.style.display = '';  // sempre visível
   if (back) back.style.display = obCurrentStep > 1 ? '' : 'none';
   if (next) {
-    const isLast = obCurrentStep === OB_TOTAL - 1;
+    const isLast  = obCurrentStep === OB_TOTAL - 1;
+    const isFirst = obCurrentStep === 0;
     next.innerHTML = isLast
       ? '<span class="icon icon-bolt" style="width:18px;height:18px"></span> Vamos lá!'
+      : isFirst
+      ? '<svg width="14" height="18" viewBox="0 0 24 32" fill="none"><polygon points="14,0 4,18 12,18 10,32 20,14 12,14" fill="#000"/></svg> Começar'
       : 'Próximo <span style="font-size:18px">›</span>';
   }
 }
@@ -11108,6 +11103,13 @@ function obGoNext() {
     save();
     // Usuário existente: vai direto ao app após o welcome
     if (_isReturningUser()) {
+      // Feedback visual imediato — oculta onboarding antes de carregar Supabase
+      const ob = document.getElementById('onboarding');
+      if (ob) {
+        ob.style.transition = 'opacity .3s';
+        ob.style.opacity = '0';
+        setTimeout(() => { ob.classList.add('hidden'); ob.style.opacity = ''; }, 320);
+      }
       finishOnboarding();
       return;
     }
