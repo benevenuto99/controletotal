@@ -2833,6 +2833,28 @@ select option{background:var(--card2)}
     <div id="adminAccessBtn" style="display:none;padding:12px 16px">
       <button onclick="openAdminPanel()" style="width:100%;height:44px;border-radius:10px;border:1px solid rgba(212,255,0,.15);background:rgba(212,255,0,.04);color:var(--acid);font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;cursor:pointer">⚡ Painel Admin</button>
     </div>
+    <!-- Conta & Sincronização -->
+    <div class="perfil-section" id="perfilContaSection">
+      <div class="perfil-section-header" onclick="togglePerfilSection('conta')">
+        <h3><span class="ps-icon">☁️</span>Conta &amp; Sincronização</h3>
+        <span class="perfil-section-chevron">▼</span>
+      </div>
+      <div class="perfil-section-body" id="perfil-body-conta" style="display:none">
+        <div id="perfil-conta-info" style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted2);margin-bottom:14px;line-height:1.7;padding:10px 12px;background:var(--card2);border-radius:10px;border:1px solid var(--border)">
+          Carregando...
+        </div>
+        <button class="btn" id="syncNowBtn" onclick="syncNow()" style="margin-bottom:8px">
+          ☁️ Sincronizar agora
+        </button>
+        <button class="btn btn-ghost" onclick="_showAuthScreen()" style="font-size:12px;margin-bottom:8px" id="perfil-login-btn">
+          🔑 Fazer login / trocar conta
+        </button>
+        <button class="btn btn-danger" onclick="Auth.signOut().then(()=>location.reload())" style="font-size:12px" id="perfil-logout-btn">
+          Sair da conta
+        </button>
+      </div>
+    </div>
+
     <div id="perfilFooter"></div>
       </div>
 
@@ -3945,7 +3967,12 @@ const Weight = {
 // ══════════════════════════════════════════════════
 const Settings = {
   get(key){ return db.settings?.[key]; },
-  set(key, value){ if(!db.settings)db.settings={}; db.settings[key]=value; save(); },
+  set(key, value){
+    if(!db.settings)db.settings={};
+    db.settings[key]=value;
+    save();
+    Sync.uploadSettings().catch(()=>{});
+  },
 
   /** Toggle diet tab on/off and re-render nav + diet view */
   toggleDietTab(){
@@ -4585,10 +4612,17 @@ function migrationSkip() {
 async function syncNow() {
   const user = await Auth.getUser();
   if (!user) { toast('⚠️ Faça login primeiro'); _showAuthScreen(); return; }
-  toast('⏳ Sincronizando...', 60000);
+  const btn = document.getElementById('syncNowBtn');
+  if (btn) { btn.textContent = '⏳ Sincronizando...'; btn.disabled = true; }
+  toast('⏳ Sincronizando tudo...', 60000);
   const result = await Sync.upload();
-  if (result.ok) toast('✅ Sincronizado — ' + result.uploaded + ' registros', 3000);
-  else toast('❌ Erro na sincronização');
+  if (btn) { btn.textContent = '☁️ Sincronizar agora'; btn.disabled = false; }
+  if (result.ok) {
+    toast('✅ Tudo sincronizado — ' + result.uploaded + ' operações', 3000);
+    if (result.errors?.length) console.warn('[Sync] Erros parciais:', result.errors);
+  } else {
+    toast('❌ Erro na sincronização: ' + (result.error || 'desconhecido'));
+  }
 }
 
 
@@ -5137,6 +5171,13 @@ async function circuloInvite() {
   }
 }
 
+// ── Debounce para sync de dieta (evita chamadas por cada toggle) ───
+let _dietSyncTimer = null;
+function _debouncedDietSync() {
+  clearTimeout(_dietSyncTimer);
+  _dietSyncTimer = setTimeout(() => Sync.uploadDiet().catch(()=>{}), 3000);
+}
+
 function initApp(){
   // ── Core modules (always run) ──
   DB.initSettings();   // ensure settings block exists
@@ -5371,6 +5412,7 @@ function checkDailyStreak() {
     }
 
     save();
+    Sync.uploadSettings().catch(()=>{}); // sincroniza streak automaticamente
   }
 
   return { status, dayComplete };
@@ -6186,6 +6228,7 @@ function markCreatina(){
   db.creatina.takenAt=new Date().toTimeString().slice(0,5);
   if(!db.creatina.startDate)db.creatina.startDate=today;
   save();renderCreatina();refreshToday('creatina');
+  Sync.uploadSettings().catch(()=>{});
   Haptic.success(); Sound.pop();
   toast('✓ Creatina tomada às '+db.creatina.takenAt, 2500);
 }
@@ -6223,6 +6266,7 @@ function toggleCreatinaWater(){
     db.creatina.takenAt='';
     if(db.creatina.streak>0)db.creatina.streak--;
     save();renderWaterCreatina();refreshToday('creatina');
+    Sync.uploadSettings().catch(()=>{});
     toast('Creatina desmarcada');return;
   }
   markCreatina();renderWaterCreatina();
@@ -6442,7 +6486,9 @@ function qlSave(){
     wodType:wodType||undefined,
     exercises:detail,detail,date,time,dateStr:fmtDate(date)};
   db.sessions.push(s);db.sessions.sort((a,b)=>b.ts-a.ts);
-  save();closeSheet('sheetQuickLog');renderActCards();renderStats(currentPeriod);refreshToday('workout');
+  save();
+  Sync.upload().catch(()=>{});
+  closeSheet('sheetQuickLog');renderActCards();renderStats(currentPeriod);refreshToday('workout');
   Haptic.medium(); Sound.pop();
   toast('✓ Treino registrado · '+kcal+' kcal');
 }
@@ -6502,6 +6548,7 @@ function logActivity(type){
   db.sessions.push(s);
   db.sessions.sort((a,b)=>b.ts-a.ts);
   save();
+  Sync.upload().catch(()=>{});
   closeSheet(ACT_SHEETS[type]);
   renderActCards();
   renderStats(currentPeriod);
@@ -6649,7 +6696,7 @@ function deleteSession(id,e){
   if(e)e.stopPropagation();
   if(!confirm('Excluir esta sessão?'))return;
   db.sessions=db.sessions.filter(s=>s.id!==id);
-  save();renderApp();renderLastWorkoutCard();toast('Sessão removida');
+  save();Sync.upload().catch(()=>{});renderApp();renderLastWorkoutCard();toast('Sessão removida');
 }
 
 // ── Workout: Accordion Vertical List ────────────────────────────────
@@ -7256,10 +7303,8 @@ function saveStructuredDiet(structuredDiet) {
   }));
 
   save();
+  Sync.uploadDiet().catch(()=>{}); // sincroniza plano alimentar automaticamente
 }
-
-/**
- * Hook into processDiet() to also build and save the structured version.
  * Called after parseDiet() succeeds.
  */
 function processStructuredDiet(legacyMeals) {
@@ -7312,6 +7357,7 @@ async function processDiet(slot){
   if(!m.length){toast('❌ Nenhuma refeição encontrada');return;}
   processStructuredDiet(m);  // build structured version before overwriting db.meals
   db.meals=m;db.lastReset=todayStr();save();
+  Sync.uploadDiet().catch(()=>{});
   closeSheet('sheetChangeDiet');renderDiet();refreshToday('diet');
   toast('✓ '+m.length+' refeições carregadas');
 }
@@ -7448,6 +7494,7 @@ function sdi_toggleItem(mi,ii){
   meal.items[ii].done=!wasDone;
   if(db.meals[mi]&&db.meals[mi].items[ii])db.meals[mi].items[ii].done=meal.items[ii].done;
   checkStreak();save();
+  _debouncedDietSync();
   Haptic.light();
   const el=document.getElementById('sdi_'+mi+'_'+ii);
   if(el){
@@ -7472,9 +7519,7 @@ function sdi_markAll(mi){
     }
   });
   checkStreak();save();renderDiet();updateDietProgress();refreshToday('diet');
-}
-
-// ── sdi_removeItem — remove item, recalc total ───────────────────
+  Sync.uploadDiet().catch(()=>{});
 function sdi_removeItem(mi,ii,e){
   e.stopPropagation();if(!confirm('Remover este item?'))return;
   db.structuredDiet.meals[mi].items.splice(ii,1);
@@ -7811,6 +7856,7 @@ function toggleItem(mi,ii){
   const wasDone = db.meals[mi].items[ii].done;
   db.meals[mi].items[ii].done = !wasDone;
   checkStreak(); save();
+  _debouncedDietSync();
   updateMealCardVisuals(mi); updateMealMacrosDisplay(mi);
   updateDietProgress(); updateDayMacros(); refreshToday('diet');
 
@@ -7836,7 +7882,7 @@ function markAllMeal(mi){
   const req=db.meals[mi].items.filter(i=>!i.optional);
   const allDone=req.length>0&&req.every(i=>i.done);
   db.meals[mi].items.forEach(i=>{if(!i.optional)i.done=!allDone;});
-  checkStreak();save();updateMealCardVisuals(mi);updateMealMacrosDisplay(mi);updateDietProgress();updateDayMacros();refreshToday('diet');
+  checkStreak();save();_debouncedDietSync();updateMealCardVisuals(mi);updateMealMacrosDisplay(mi);updateDietProgress();updateDayMacros();refreshToday('diet');
 }
 function updateMealCardVisuals(mi){
   const meal=db.meals[mi];
@@ -7939,11 +7985,13 @@ function saveWeight(){
   db.profile.weight=kg;
   document.getElementById('inKg').value='';
   save();renderWeight();renderPesoMetrica();refreshToday('weight');
+  // Sincroniza pesagem + perfil (peso atual) com o banco
+  Sync.upload().catch(()=>{});
   const fb=document.getElementById('weightFeedback');
   if(fb){fb.classList.add('show');setTimeout(()=>fb.classList.remove('show'),2200);}
   toast('✓ Peso registrado');
 }
-function deleteWeight(id){if(!confirm('Apagar este registro?'))return;db.weight=db.weight.filter(w=>w.id!==id);save();renderWeight();}
+function deleteWeight(id){if(!confirm('Apagar este registro?'))return;db.weight=db.weight.filter(w=>w.id!==id);save();Sync.upload().catch(()=>{});renderWeight();}
 function renderWeight(){
   const list=document.getElementById('weightList');
   if(!db.weight.length){
@@ -8121,7 +8169,9 @@ function saveManageActs(){
   const btns=document.querySelectorAll('#manageSportsList .toggle-switch');
   const newActs=[];btns.forEach(b=>{if(b.classList.contains('on'))newActs.push(b.dataset.act);});
   if(newActs.length===0){toast('⚠️ Selecione pelo menos 1 esporte');return;}
-  db.activities=newActs;save();closeSheet('sheetManageActs');renderActCards();renderDashboard();toast('✓ Esportes atualizados');
+  db.activities=newActs;save();
+  Sync.uploadSettings().catch(()=>{});
+  closeSheet('sheetManageActs');renderActCards();renderDashboard();toast('✓ Esportes atualizados');
 }
 
 // ── App: Edit Session ───────────────────────────────────────────────
@@ -8153,7 +8203,7 @@ function saveEditSession(){
   const _esTimeVal=document.getElementById('editSessTime')?.value;
   if(_esDateVal){s.date=_esDateVal;s.dateStr=fmtDate(_esDateVal);}
   if(_esTimeVal)s.time=_esTimeVal;
-  save();closeSheet('sheetEditSession');renderActCards();renderStats(currentPeriod);refreshToday('workout');
+  save();Sync.upload().catch(()=>{});closeSheet('sheetEditSession');renderActCards();renderStats(currentPeriod);refreshToday('workout');
   toast('✓ Sessão atualizada');
 }
 
@@ -8183,7 +8233,10 @@ function restoreBackup(){
     if(!parsed.missions)parsed.missions={lastDate:'',water:false,creatina:false,dieta:false,treino:false};
     if(!parsed.creatina)parsed.creatina={streak:0,lastDate:'',startDate:''};
     if(!parsed.insights)parsed.insights={lastShown:0,dismissed:[]};
-    db=parsed;save();location.reload();
+    db=parsed;save();
+    // Após restaurar backup, sobe tudo para a nuvem se logado
+    Sync.upload().then(r => { if(r?.ok) console.log('[Sync] Backup restaurado e enviado para nuvem'); }).catch(()=>{});
+    location.reload();
   }catch(e){res.textContent='❌ Código inválido ou corrompido';res.style.color='var(--red)';}
 }
 
@@ -9277,6 +9330,7 @@ function saveRoutine() {
     toast('✅ Ficha criada');
   }
   save();
+  Sync.upload().catch(()=>{});
   closeSheet('sheetEditRoutine');
   renderRoutineList();
   openSheet('sheetGymRoutines');
@@ -9288,6 +9342,7 @@ function deleteRoutine(id) {
   _ensureRoutines();
   db.gymRoutines = db.gymRoutines.filter(r => r.id !== id);
   save();
+  Sync.upload().catch(()=>{});
   toast('Ficha removida');
   closeSheet('sheetViewRoutine');
   renderRoutineList();
@@ -9628,7 +9683,8 @@ const Auth = {
 };
 
 // ╔══════════════════════════════════════════════════════════════════╗
-// ║  MODULE: SYNC — Sincronização local ↔ Supabase                  ║
+// ║  MODULE: SYNC — Sincronização local ↔ Supabase (COMPLETO)       ║
+// ║  Cobre: sessions · weight · routines · water · diet · settings  ║
 // ╚══════════════════════════════════════════════════════════════════╝
 const Sync = {
 
@@ -9638,19 +9694,23 @@ const Sync = {
       const sb = await _getSupabase();
       const { data } = await sb.from('profiles').select('id').eq('id', user.id).single();
       if (!data) {
-        // Criar perfil novo
         await sb.from('profiles').insert({
           id: user.id,
           name: db.profile?.name || '',
           weight_kg: db.profile?.weight || null,
+          sexo: db.profile?.sexo || null,
+          birthday: db.profile?.birthday || null,
+          water_goal: db.water?.goal || 3000,
+          activities: db.activities || [],
           created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         });
         console.log('[Sync] Perfil criado no Supabase');
       }
     } catch(e) { console.error('[Sync] ensureProfile:', e); }
   },
 
-  // ── Upload: envia dados locais para o Supabase ────────────────
+  // ── Upload: envia TODOS os dados locais para o Supabase ──────
   async upload() {
     const user = await Auth.getUser();
     if (!user) return { ok: false, error: 'Não autenticado' };
@@ -9658,8 +9718,9 @@ const Sync = {
       const sb = await _getSupabase();
       const uid = user.id;
       let uploaded = 0;
+      const errors = [];
 
-      // Sessões
+      // ── 1. Sessões de treino ─────────────────────────────────
       if (db.sessions?.length) {
         const rows = db.sessions.map(s => ({
           id: s.id,
@@ -9678,10 +9739,10 @@ const Sync = {
         }));
         const { error } = await sb.from('sessions').upsert(rows, { onConflict: 'id' });
         if (!error) uploaded += rows.length;
-        else console.warn('[Sync] sessions:', error.message);
+        else errors.push('sessions: ' + error.message);
       }
 
-      // Pesos
+      // ── 2. Pesagens ──────────────────────────────────────────
       if (db.weight?.length) {
         const rows = db.weight.map(w => ({
           id: String(w.id),
@@ -9696,10 +9757,10 @@ const Sync = {
         }));
         const { error } = await sb.from('weight_entries').upsert(rows, { onConflict: 'id' });
         if (!error) uploaded += rows.length;
-        else console.warn('[Sync] weight:', error.message);
+        else errors.push('weight: ' + error.message);
       }
 
-      // Fichas de academia
+      // ── 3. Fichas de academia ────────────────────────────────
       if (db.gymRoutines?.length) {
         const rows = db.gymRoutines.map(r => ({
           id: String(r.id),
@@ -9713,10 +9774,10 @@ const Sync = {
         }));
         const { error } = await sb.from('gym_routines').upsert(rows, { onConflict: 'id' });
         if (!error) uploaded += rows.length;
-        else console.warn('[Sync] gym_routines:', error.message);
+        else errors.push('gym_routines: ' + error.message);
       }
 
-      // Entradas de água
+      // ── 4. Entradas de água ──────────────────────────────────
       const waterEntries = db.water?.entries || [];
       if (waterEntries.length) {
         const rows = waterEntries.map(w => ({
@@ -9729,18 +9790,82 @@ const Sync = {
         }));
         const { error } = await sb.from('water_entries').upsert(rows, { onConflict: 'id' });
         if (!error) uploaded += rows.length;
-        else console.warn('[Sync] water:', error.message);
+        else errors.push('water: ' + error.message);
       }
 
-      console.log('[Sync] Upload OK:', uploaded, 'registros');
-      return { ok: true, uploaded };
+      // ── 5. Perfil completo ───────────────────────────────────
+      {
+        const { error } = await sb.from('profiles').upsert({
+          id: uid,
+          name: db.profile?.name || '',
+          weight_kg: db.profile?.weight || null,
+          sexo: db.profile?.sexo || null,
+          birthday: db.profile?.birthday || null,
+          water_goal: db.water?.goal || 3000,
+          activities: db.activities || [],
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
+        if (!error) uploaded += 1;
+        else errors.push('profiles: ' + error.message);
+      }
+
+      // ── 6. Settings, streak, creatina, missões ───────────────
+      {
+        const settingsRow = {
+          user_id: uid,
+          // Streak diário
+          streak_count:   db.dailyStreak?.count || 0,
+          streak_best:    db.dailyStreak?.bestStreak || 0,
+          streak_last:    db.dailyStreak?.lastDate || null,
+          streak_total:   db.dailyStreak?.totalDays || 0,
+          streak_history: db.dailyStreak?.history || [],
+          // Creatina
+          creatina_streak: db.creatina?.streak || 0,
+          creatina_last:   db.creatina?.lastDate || null,
+          creatina_start:  db.creatina?.startDate || null,
+          creatina_taken:  db.creatina?.takenAt || null,
+          // Missões do dia
+          missions: db.missions || {},
+          // Settings gerais (tudo exceto dados de treino)
+          settings: {
+            showDietTab:   db.settings?.showDietTab ?? true,
+            showCreatina:  db.settings?.showCreatina ?? false,
+            notifications: db.settings?.notifications ?? false,
+            lastComplete:  db.lastComplete || '',
+            lastReset:     db.lastReset || '',
+          },
+          free_meal: db.freeMeal || {},
+          updated_at: new Date().toISOString(),
+        };
+        const { error } = await sb.from('user_settings').upsert(settingsRow, { onConflict: 'user_id' });
+        if (!error) uploaded += 1;
+        else errors.push('user_settings: ' + error.message);
+      }
+
+      // ── 7. Plano alimentar ───────────────────────────────────
+      if (db.meals?.length || db.structuredDiet?.meals?.length) {
+        const { error } = await sb.from('diet_plans').upsert({
+          user_id:         uid,
+          meals_json:      db.meals || [],
+          structured_json: db.structuredDiet || {},
+          last_reset:      db.lastReset || null,
+          last_complete:   db.lastComplete || null,
+          updated_at:      new Date().toISOString(),
+        }, { onConflict: 'user_id' });
+        if (!error) uploaded += 1;
+        else errors.push('diet_plans: ' + error.message);
+      }
+
+      if (errors.length) console.warn('[Sync] Upload parcial — erros:', errors);
+      console.log('[Sync] Upload OK:', uploaded, 'operações');
+      return { ok: true, uploaded, errors };
     } catch(e) {
       console.error('[Sync] upload error:', e);
       return { ok: false, error: e.message };
     }
   },
 
-  // ── Download: puxa dados do Supabase para o local ─────────────
+  // ── Download: puxa TODOS os dados do Supabase para o local ───
   async download() {
     const user = await Auth.getUser();
     if (!user) return { ok: false, error: 'Não autenticado' };
@@ -9748,13 +9873,18 @@ const Sync = {
       const sb = await _getSupabase();
       const uid = user.id;
 
-      const [sessions, weights, routines, waters] = await Promise.all([
+      // Busca tudo em paralelo
+      const [sessions, weights, routines, waters, profile, settings, diet] = await Promise.all([
         sb.from('sessions').select('*').eq('user_id', uid).order('ts', { ascending: false }),
         sb.from('weight_entries').select('*').eq('user_id', uid).order('ts', { ascending: false }),
         sb.from('gym_routines').select('*').eq('user_id', uid),
         sb.from('water_entries').select('*').eq('user_id', uid).order('ts', { ascending: false }),
+        sb.from('profiles').select('*').eq('id', uid).single(),
+        sb.from('user_settings').select('*').eq('user_id', uid).single(),
+        sb.from('diet_plans').select('*').eq('user_id', uid).single(),
       ]);
 
+      // ── Sessões ──────────────────────────────────────────────
       if (sessions.data?.length) {
         db.sessions = sessions.data.map(s => ({
           id: s.id, type: s.type, title: s.title,
@@ -9767,6 +9897,7 @@ const Sync = {
         }));
       }
 
+      // ── Pesos ────────────────────────────────────────────────
       if (weights.data?.length) {
         db.weight = weights.data.map(w => ({
           id: w.id, kg: w.kg, date: w.date_str,
@@ -9776,6 +9907,7 @@ const Sync = {
         }));
       }
 
+      // ── Fichas ───────────────────────────────────────────────
       if (routines.data?.length) {
         db.gymRoutines = routines.data.map(r => ({
           id: r.id, name: r.name,
@@ -9787,6 +9919,7 @@ const Sync = {
         }));
       }
 
+      // ── Água ─────────────────────────────────────────────────
       if (waters.data?.length) {
         if (!db.water) db.water = { goal: 3000, entries: [] };
         db.water.entries = waters.data.map(w => ({
@@ -9794,14 +9927,118 @@ const Sync = {
         }));
       }
 
+      // ── Perfil completo ──────────────────────────────────────
+      if (profile.data) {
+        const p = profile.data;
+        if (!db.profile) db.profile = {};
+        if (p.name)       db.profile.name    = p.name;
+        if (p.weight_kg)  db.profile.weight  = p.weight_kg;
+        if (p.sexo)       db.profile.sexo    = p.sexo;
+        if (p.birthday)   db.profile.birthday = p.birthday;
+        if (p.water_goal) {
+          if (!db.water) db.water = { goal: p.water_goal, entries: [] };
+          db.water.goal = p.water_goal;
+        }
+        if (p.activities?.length) db.activities = p.activities;
+      }
+
+      // ── Settings, streak, creatina, missões ──────────────────
+      if (settings.data) {
+        const s = settings.data;
+        // Streak diário
+        if (!db.dailyStreak) db.dailyStreak = {};
+        db.dailyStreak.count      = s.streak_count  || 0;
+        db.dailyStreak.bestStreak = s.streak_best   || 0;
+        db.dailyStreak.lastDate   = s.streak_last   || '';
+        db.dailyStreak.totalDays  = s.streak_total  || 0;
+        if (s.streak_history?.length) db.dailyStreak.history = s.streak_history;
+        // Creatina
+        if (!db.creatina) db.creatina = {};
+        db.creatina.streak    = s.creatina_streak || 0;
+        db.creatina.lastDate  = s.creatina_last   || '';
+        db.creatina.startDate = s.creatina_start  || '';
+        db.creatina.takenAt   = s.creatina_taken  || '';
+        // Missões
+        if (s.missions && s.missions.lastDate) {
+          db.missions = s.missions;
+        }
+        // Settings gerais
+        if (s.settings) {
+          if (!db.settings) db.settings = {};
+          Object.assign(db.settings, s.settings);
+          if (s.settings.lastComplete) db.lastComplete = s.settings.lastComplete;
+          if (s.settings.lastReset)    db.lastReset    = s.settings.lastReset;
+        }
+        // Free meal
+        if (s.free_meal?.date) db.freeMeal = s.free_meal;
+      }
+
+      // ── Plano alimentar ──────────────────────────────────────
+      if (diet.data) {
+        const d = diet.data;
+        if (d.meals_json?.length)          db.meals         = d.meals_json;
+        if (d.structured_json?.meals?.length) db.structuredDiet = d.structured_json;
+        if (d.last_reset)    db.lastReset    = d.last_reset;
+        if (d.last_complete) db.lastComplete = d.last_complete;
+      }
+
       db._userId = uid;
       save();
-      console.log('[Sync] Download OK');
+      console.log('[Sync] Download OK — todos os dados sincronizados');
       return { ok: true };
     } catch(e) {
       console.error('[Sync] download error:', e);
       return { ok: false, error: e.message };
     }
+  },
+
+  // ── Upload rápido (só settings + streak + creatina) ──────────
+  // Chamado automaticamente ao completar missão, tomar creatina, etc.
+  async uploadSettings() {
+    const user = await Auth.getUser();
+    if (!user) return;
+    try {
+      const sb = await _getSupabase();
+      await sb.from('user_settings').upsert({
+        user_id: user.id,
+        streak_count:    db.dailyStreak?.count || 0,
+        streak_best:     db.dailyStreak?.bestStreak || 0,
+        streak_last:     db.dailyStreak?.lastDate || null,
+        streak_total:    db.dailyStreak?.totalDays || 0,
+        streak_history:  db.dailyStreak?.history || [],
+        creatina_streak: db.creatina?.streak || 0,
+        creatina_last:   db.creatina?.lastDate || null,
+        creatina_start:  db.creatina?.startDate || null,
+        creatina_taken:  db.creatina?.takenAt || null,
+        missions:        db.missions || {},
+        settings: {
+          showDietTab:   db.settings?.showDietTab ?? true,
+          showCreatina:  db.settings?.showCreatina ?? false,
+          notifications: db.settings?.notifications ?? false,
+          lastComplete:  db.lastComplete || '',
+          lastReset:     db.lastReset || '',
+        },
+        free_meal:    db.freeMeal || {},
+        updated_at:   new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+    } catch(e) { console.warn('[Sync] uploadSettings silencioso:', e.message); }
+  },
+
+  // ── Upload rápido só do plano alimentar ──────────────────────
+  async uploadDiet() {
+    const user = await Auth.getUser();
+    if (!user) return;
+    try {
+      const sb = await _getSupabase();
+      await sb.from('diet_plans').upsert({
+        user_id:         user.id,
+        meals_json:      db.meals || [],
+        structured_json: db.structuredDiet || {},
+        last_reset:      db.lastReset || null,
+        last_complete:   db.lastComplete || null,
+        updated_at:      new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+    } catch(e) { console.warn('[Sync] uploadDiet silencioso:', e.message); }
   },
 };
 
@@ -10187,6 +10424,7 @@ function editPerfilName() {
   if (!db.profile) db.profile = {};
   db.profile.name = trimmed || current;
   save();
+  Sync.uploadSettings().catch(()=>{});
   renderPerfil();
   toast('✅ Nome atualizado');
 }
@@ -10251,12 +10489,39 @@ function renderPerfil() {
   if (document.getElementById('perfil-body-stats')?.classList.contains('open')) {
     renderStats(currentPeriod);
   }
+
+  // Conta section — mostrar email e status
+  Auth.getUser().then(user => {
+    const info = document.getElementById('perfil-conta-info');
+    const loginBtn = document.getElementById('perfil-login-btn');
+    const logoutBtn = document.getElementById('perfil-logout-btn');
+    if (!info) return;
+    if (user) {
+      info.innerHTML =
+        '✅ <strong style="color:var(--text)">' + user.email + '</strong><br>'
+        + 'Dados sincronizados automaticamente<br>'
+        + '<span style="color:var(--muted)">ID: ' + user.id.slice(0,8) + '...</span>';
+      if (loginBtn) loginBtn.style.display = 'none';
+      if (logoutBtn) logoutBtn.style.display = '';
+    } else {
+      info.innerHTML = '⚠️ Sem conta — dados apenas neste dispositivo.<br>Faça login para sincronizar em qualquer lugar.';
+      if (loginBtn) loginBtn.style.display = '';
+      if (logoutBtn) logoutBtn.style.display = 'none';
+    }
+  }).catch(() => {});
 }
 
 function togglePerfilSection(id) {
   const body = document.getElementById('perfil-body-' + id);
   const header = body?.previousElementSibling;
   if (!body) return;
+  // conta section uses display:none/block
+  if (id === 'conta') {
+    const isHidden = body.style.display === 'none' || body.style.display === '';
+    body.style.display = isHidden ? 'block' : 'none';
+    if (header) header.classList.toggle('open', isHidden);
+    return;
+  }
   const isOpen = body.classList.contains('open');
   body.classList.toggle('open', !isOpen);
   if (header) header.classList.toggle('open', !isOpen);
@@ -11669,6 +11934,11 @@ function addWater(ml, btn) {
 
   // Persist & update BeneControl
   if (typeof save === 'function') save();
+  // Sync água com debounce (não chamar a cada gole)
+  if (typeof Sync !== 'undefined') {
+    clearTimeout(window._waterSyncTimer);
+    window._waterSyncTimer = setTimeout(() => Sync.upload().catch(()=>{}), 5000);
+  }
   if (typeof renderDashboard === 'function') renderDashboard();
   if (typeof refreshToday === 'function') refreshToday('water');
 
@@ -11825,6 +12095,7 @@ function applyGoal(newGoal) {
   waterState.goal = newGoal;
   wm_goalNotified = wm_totalToday() >= newGoal;
   if (typeof save === 'function') save();
+  if (typeof Sync !== 'undefined') Sync.uploadSettings().catch(()=>{});
   if (typeof renderDashboard === 'function') renderDashboard();
   wm_render();
   const disp = document.getElementById('wm-currentGoalDisplay');
