@@ -2035,7 +2035,10 @@ select option{background:var(--card2)}
   transition:opacity .4s ease;
   /* will-change para GPU acelerar o fade */
   will-change:opacity;
+  /* CSS failsafe: some sozinho após 9s se o JS travar */
+  animation:splashAutoHide 0.4s ease 9s forwards;
 }
+@keyframes splashAutoHide{to{opacity:0;pointer-events:none;}}
 #appSplash.fade-out{
   opacity:0;
   pointer-events:none;
@@ -4342,6 +4345,12 @@ async function _showApp() {
   function _safeReveal() {
     if (_appRevealed) return;
     _appRevealed = true;
+    // Esconder o splash ANTES de revelar o app (caso _hideSplash não tenha sido chamado)
+    const splash = document.getElementById('appSplash');
+    if (splash && !splash.classList.contains('hidden')) {
+      splash.classList.add('fade-out');
+      setTimeout(() => splash.classList.add('hidden'), 400);
+    }
     _revealApp();
   }
   const _safetyTimer = setTimeout(() => {
@@ -4426,6 +4435,25 @@ function _revealApp() {
 })();
 
 window.addEventListener('load', () => {
+  // ── FAILSAFE ABSOLUTO: splash some em no máximo 8s, independente de qualquer coisa ──
+  // Isso garante que o usuário nunca fica preso na splash eternamente
+  const _absoluteBootTimeout = setTimeout(() => {
+    const splash = document.getElementById('appSplash');
+    if (splash && !splash.classList.contains('hidden')) {
+      console.warn('[Boot] Absolute timeout — forçando saída do splash');
+      splash.classList.add('fade-out');
+      setTimeout(() => {
+        splash.classList.add('hidden');
+        // Garantir que o app está visível
+        ['mainHdr','mainWrap','mainNav'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = '';
+        });
+        try { if (typeof renderApp === 'function') renderApp(); } catch(e) {}
+      }, 400);
+    }
+  }, 8000);
+
   // ── Preparação silenciosa enquanto splash está visível ──
   const now = new Date();
   const inDate = document.getElementById('inDate');
@@ -6562,7 +6590,9 @@ function qlSave(){
   Sync.upload().catch(()=>{});
   closeSheet('sheetQuickLog');renderActCards();renderStats(currentPeriod);refreshToday('workout');
   Haptic.medium(); Sound.pop();
-  showWorkoutToast(qlType, kcal);{return s.charAt(0).toUpperCase()+s.slice(1);}
+  showWorkoutToast(qlType, kcal);
+}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
 function latestWeight(){
   if(!db.weight.length) return 0;
   return [...db.weight].sort((a,b)=>b.ts-a.ts)[0]?.kg||0;
