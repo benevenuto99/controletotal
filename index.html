@@ -547,7 +547,7 @@ select option{background:var(--card2)}
 
 
 /* ══ MEAL CARDS ══ */
-.meal-card{background:var(--card);border:1px solid var(--border2);border-radius:13px;margin-bottom:8px;overflow:hidden;transition:border-color .2s;animation:slideUp .28s ease both}
+.meal-card{background:var(--card);border:1px solid rgba(255,255,255,.12);border-radius:13px;margin-bottom:8px;overflow:hidden;transition:border-color .2s;animation:slideUp .28s ease both}
 .meal-card.done{border-color:rgba(212,255,0,.4)}
 .meal-card.done .meal-hdr{background:rgba(212,255,0,.05)}
 .meal-hdr{padding:12px 14px;display:flex;align-items:center;gap:10px;user-select:none}
@@ -556,7 +556,7 @@ select option{background:var(--card2)}
 .meal-title-block{flex:1;min-width:0;cursor:pointer}
 .meal-name{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1;color:var(--acid2);text-shadow:0 0 20px rgba(212,255,0,.15)}
 .meal-card.done .meal-name{color:var(--acid)}
-.meal-sub{font-size:11px;color:var(--muted2);margin-top:1px}
+.meal-sub{font-size:11px;color:rgba(255,255,255,.7);margin-top:2px;font-family:'Space Mono',monospace;letter-spacing:.2px}
 .meal-hdr-r{display:flex;align-items:center;gap:2px;flex-shrink:0}
 .ico-btn{background:none;border:none;color:var(--muted);cursor:pointer;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:12px;transition:all .15s}
 .ico-btn:hover{color:var(--text);background:var(--border)}
@@ -2379,7 +2379,7 @@ select option{background:var(--card2)}
           <div class="ob-feat-card ob-feat-hi"><div class="ob-feat-icon">🏋️</div><div class="ob-feat-body"><div class="ob-feat-name">Treino</div><div class="ob-feat-sub">Registre cada sessão</div></div></div>
           <div class="ob-feat-card ob-feat-hi"><div class="ob-feat-icon">💧</div><div class="ob-feat-body"><div class="ob-feat-name">Água</div><div class="ob-feat-sub">Meta diária</div></div></div>
           <div class="ob-feat-card ob-feat-hi"><div class="ob-feat-icon">🥗</div><div class="ob-feat-body"><div class="ob-feat-name">Dieta</div><div class="ob-feat-sub">Plano alimentar</div></div></div>
-          <div class="ob-feat-card"><div class="ob-feat-icon">👥</div><div class="ob-feat-body"><div class="ob-feat-name">Círculo</div><div class="ob-feat-sub">Evolua com quem você confia</div></div></div>
+          <div class="ob-feat-card"><div class="ob-feat-icon"><svg width="32" height="26" viewBox="0 0 32 22" xmlns="http://www.w3.org/2000/svg" fill="var(--acid2)"><circle cx="5" cy="4" r="2.8" opacity=".5"/><path d="M0 14c0-2.76 2.24-5 5-5s5 2.24 5 5H0z" opacity=".5"/><circle cx="16" cy="3.5" r="3.2"/><path d="M9 14c0-3.31 3.13-6 7-6s7 2.69 7 6H9z"/><circle cx="27" cy="4" r="2.8" opacity=".5"/><path d="M22 14c0-2.76 2.24-5 5-5s5 2.24 5 5h-10z" opacity=".5"/></svg></div><div class="ob-feat-body"><div class="ob-feat-name">Círculo</div><div class="ob-feat-sub">Evolua com quem você confia</div></div></div>
           <div class="ob-feat-card"><div class="ob-feat-icon">📊</div><div class="ob-feat-body"><div class="ob-feat-name">Evolução</div><div class="ob-feat-sub">Gráficos e sequência</div></div></div>
           <div class="ob-feat-card"><div class="ob-feat-icon">☁️</div><div class="ob-feat-body"><div class="ob-feat-name">Nuvem</div><div class="ob-feat-sub">Sincronizado em qualquer dispositivo</div></div></div>
         </div>
@@ -2583,8 +2583,10 @@ select option{background:var(--card2)}
     <div id="mealList"></div>
     <div id="dietActions" class="btns-stack" style="display:none">
       <button class="btn btn-ghost" onclick="openSheet('sheetAddMeal')"><span class="icon icon-plus"></span> Adicionar Refeição</button>
-      <button class="btn btn-ghost" onclick="if(!db.meals.length||confirm('⚠️ Isso vai substituir a dieta atual.\nContinuar?'))openSheet('sheetChangeDiet')"><span class="icon icon-sync-alt"></span> Trocar Dieta</button>
-      <button class="btn" style="background:#128c7e;color:#fff;font-size:14px" onclick="exportPDF()"><span class="icon icon-whatsapp"></span> Exportar PDF</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" style="flex:1;font-size:13px" onclick="if(!db.meals.length||confirm('⚠️ Isso vai substituir a dieta atual.\nContinuar?'))openSheet('sheetChangeDiet')"><span class="icon icon-sync-alt"></span> Trocar Dieta</button>
+        <button class="btn" style="flex:1;background:#128c7e;color:#fff;font-size:13px" onclick="exportPDF()"><span class="icon icon-whatsapp"></span> Exportar PDF</button>
+      </div>
       <div style="display:flex;gap:7px;margin-top:0"><button class="btn btn-ghost btn-sm" style="flex:1;font-size:11px;gap:5px" onclick="shareWhatsApp()"><span class="icon icon-whatsapp" style="width:14px;height:14px"></span> Resumo WhatsApp</button><button class="btn btn-ghost btn-sm" style="flex:1;font-size:11px" onclick="shareInstagram()">📸 Copiar p/ Instagram</button></div>
       <div class="divider"></div>
       <button class="btn btn-ghost" style="font-size:13px" onclick="openSheet('sheetBackup')">💾 Backup / Restaurar dados</button>
@@ -2947,7 +2949,7 @@ select option{background:var(--card2)}
   <button class="nav-btn" id="nb-act" onclick="switchView('act')"><span class="icon icon-dumbbell"></span>Treino<div class="nav-dot"></div></button>
   <button class="nav-btn" id="nb-evo" onclick="switchView('evo')"><span class="icon icon-chart-line"></span>Evolução<div class="nav-dot"></div></button>
   <button class="nav-btn" id="nb-perfil" onclick="switchView('perfil')"><span class="icon icon-weight"></span>Peso<div class="nav-dot"></div></button>
-  <button class="nav-btn" id="nb-circulo" onclick="switchView('circulo')"><svg width="22" height="16" viewBox="0 0 22 16" fill="#d4ff00" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="4" r="3.5"/><path d="M0 15c0-4.418 3.582-8 8-8s8 3.582 8 8H0z"/><circle cx="17" cy="4.5" r="2.8" opacity=".6"/><path d="M13 15c0-2.8 1.6-5.2 4-6.4V15h-4z" opacity=".6"/></svg><span class="nav-lbl" style="font-size:7.5px;letter-spacing:0;line-height:1.1;text-align:center">Círculo de<br>Confiança</span><div class="nav-dot"></div></button>
+  <button class="nav-btn" id="nb-circulo" onclick="switchView('circulo')"><svg width="22" height="17" viewBox="0 0 32 22" xmlns="http://www.w3.org/2000/svg" fill="#d4ff00"><circle cx="5" cy="4" r="2.8" opacity=".5"/><path d="M0 14c0-2.76 2.24-5 5-5s5 2.24 5 5H0z" opacity=".5"/><circle cx="16" cy="3.5" r="3.2"/><path d="M9 14c0-3.31 3.13-6 7-6s7 2.69 7 6H9z"/><circle cx="27" cy="4" r="2.8" opacity=".5"/><path d="M22 14c0-2.76 2.24-5 5-5s5 2.24 5 5h-10z" opacity=".5"/></svg><span class="nav-lbl" style="font-size:7.5px;letter-spacing:0;line-height:1.1;text-align:center">Círculo de<br>Confiança</span><div class="nav-dot"></div></button>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -8247,8 +8249,8 @@ function renderStructuredMealCard(meal,mi){
     '<div class="meal-hdr">'
     +'<div class="meal-circle" onclick="sdi_markAll('+mi+')" title="Marcar tudo">'+(allDone?'<span class="icon icon-check" style="font-size:13px"></span>':'')+'</div>'
     +'<div class="meal-title-block" onclick="toggleMeal('+mi+')">'
-    +'<div class="meal-name">'+escHtml(meal.name)+'</div>'
-    +'<div class="meal-sub">'+(meal.time?'<span style="font-family:Space Mono,monospace;font-size:9px;color:var(--acid2);margin-right:5px">'+escHtml(meal.time)+'</span>':'')+doneCount+'/'+meal.items.length+' itens'+(reqItems.length<meal.items.length?' (alguns opcionais)':'')+'</div>'
+    +'<div style="display:flex;align-items:center;gap:7px">'+'<span class="meal-name">'+escHtml(meal.name)+'</span>'+(meal.time?'<span style="font-family:Space Mono,monospace;font-size:10px;color:var(--acid2);opacity:.65;letter-spacing:.5px;line-height:1">'+escHtml(meal.time)+'</span>':'')+'</div>'
+    +'<div class="meal-sub" style="color:rgba(255,255,255,.75)">'+doneCount+'/'+meal.items.length+' itens'+(reqItems.length<meal.items.length?' · alguns opcionais':'')+'</div>'
     +'</div>'
     +'<div class="meal-hdr-r">'
     +'<span class="sdi-meal-kcal" id="sdi_meal_kcal_'+mi+'" onclick="sdi_editMealKcal('+mi+',event)" title="Editar total" style="cursor:pointer;display:'+(totalKcal?'block':'none')+'">' +(totalKcal?totalKcal+' kcal':'')+'</span>'
@@ -8303,8 +8305,8 @@ function renderDiet(){
       '<div class="meal-hdr">'
       +'<div class="meal-circle" onclick="markAllMeal('+mi+')" title="Marcar tudo como concluído">'+(allDone?'<span class="icon icon-check" style="font-size:13px"></span>':'')+'</div>'
       +'<div class="meal-title-block" onclick="toggleMeal('+mi+')">'
-      +'<div class="meal-name">'+escHtml(meal.title)+'</div>'
-      +'<div class="meal-sub">'+(meal.time?'<span style="font-family:Space Mono,monospace;font-size:9px;color:var(--acid2);margin-right:5px">'+escHtml(meal.time)+'h</span>':'')+doneCount+'/'+meal.items.length+' itens'+(reqItems.length<meal.items.length?' (alguns opcionais)':'')+'</div></div>'
+      +'<div style="display:flex;align-items:center;gap:7px">'+'<span class="meal-name">'+escHtml(meal.title)+'</span>'+(meal.time?'<span style="font-family:Space Mono,monospace;font-size:10px;color:var(--acid2);opacity:.65;letter-spacing:.5px;line-height:1">'+escHtml(meal.time)+'</span>':'')+'</div>'
+      +'<div class="meal-sub" style="color:rgba(255,255,255,.75)">'+doneCount+'/'+meal.items.length+' itens'+(reqItems.length<meal.items.length?' · alguns opcionais':'')+'</div></div>'
       +'<div class="meal-hdr-r">'
       +'<div class="ico-btn" onclick="toggleMeal('+mi+')" title="Expandir/recolher"><span class="icon icon-chevron-down chevron" id="chev'+mi+'"></span></div>'
       +'<button class="ico-btn" onclick="openEditMeal('+mi+',event)" title="Editar"><span class="icon icon-pen"></span></button>'
