@@ -2583,7 +2583,7 @@ select option{background:var(--card2)}
     <div id="mealList"></div>
     <div id="dietActions" class="btns-stack" style="display:none">
       <button class="btn btn-ghost" onclick="openSheet('sheetAddMeal')"><span class="icon icon-plus"></span> Adicionar Refeição</button>
-      <button class="btn btn-ghost" onclick="openSheet('sheetChangeDiet')"><span class="icon icon-sync-alt"></span> Trocar Dieta</button>
+      <button class="btn btn-ghost" onclick="if(!db.meals.length||confirm('⚠️ Isso vai substituir a dieta atual.\nContinuar?'))openSheet('sheetChangeDiet')"><span class="icon icon-sync-alt"></span> Trocar Dieta</button>
       <button class="btn" style="background:#128c7e;color:#fff;font-size:14px" onclick="exportPDF()"><span class="icon icon-whatsapp"></span> Exportar PDF</button>
       <div style="display:flex;gap:7px;margin-top:0"><button class="btn btn-ghost btn-sm" style="flex:1;font-size:11px;gap:5px" onclick="shareWhatsApp()"><span class="icon icon-whatsapp" style="width:14px;height:14px"></span> Resumo WhatsApp</button><button class="btn btn-ghost btn-sm" style="flex:1;font-size:11px" onclick="shareInstagram()">📸 Copiar p/ Instagram</button></div>
       <div class="divider"></div>
@@ -7204,7 +7204,7 @@ async function extractPDF(file){
         const gap=cur.x-(prev.x+prev.w);
         const noSp=!/\s$/.test(prev.str)&&!/^\s/.test(cur.str);
         if(noSp&&gap<1.5)line+=cur.str;
-        else if(noSp&&gap<25&&/[A-ZÁÀÃÂÉÊÍÓÔÕÚÜÇ]$/.test(prev.str)&&/^[A-ZÁÀÃÂÉÊÍÓÔÕÚÜÇ]/.test(cur.str))line+=cur.str;
+        else if(noSp&&gap<40&&/[A-ZÁÀÃÂÉÊÍÓÔÕÚÜÇ]$/.test(prev.str)&&/^[A-ZÁÀÃÂÉÊÍÓÔÕÚÜÇ]/.test(cur.str))line+=cur.str;
         else if(noSp&&gap<8&&/[a-záàãâéêíóôõúüç]$/i.test(prev.str)&&/^[a-záàãâéêíóôõúüç]/i.test(cur.str))line+=cur.str;
         else line+='  '+cur.str.trimStart(); // 2 espaços para separar colunas de tabela
       });
@@ -7525,12 +7525,17 @@ function parseDietTableFormat(raw) {
     // Tab
     const tp = line.split('\t');
     if (tp.length === 2) return {name:tp[0].trim(), qty:tp[1].trim()};
-    // 2+ espaços
+    // 2+ espaços (colunas de tabela separadas por espaço duplo)
     const m = line.match(/^(.+?)\s{2,}(\d.*|[½¼¾].*|À vontade.*|A vontade.*)$/i);
     if (m) return {name:m[1].trim(), qty:m[2].trim()};
-    // Fallback: palavra-chave de medida no meio da linha
-    const m2 = line.match(/^(.+?\D)\s+(\d+[\/.;,]?\d*\s+(?:Fatia|Unidade|Colher|Porção|Copo|Concha|Medidor|Pacote|Xícara|Lata|Escumadeira|Bife|Pedaço|Metade|A vontade).*)$/i);
-    if (m2) return {name:m2[1].trim(), qty:m2[2].trim()};
+    // Fallback agressivo: qualquer número ou fração seguido de medida
+    // Cobre: "Pão integral 2 Fatia(s) (50g)" e "Whey ½ Medidor(es) (15g)"
+    const QTY_WORDS = 'Fatia|Unidade|Colher|Porção|Porco|Copo|Concha|Medidor|Pacote|Xícara|Lata|Escumadeira|Bife|Pedaço|Metade|vontade';
+    const m2 = line.match(new RegExp('^(.+?)\\s+((\\d+[\\d.,\\/]*|[½¼¾])\\s+(?:'+QTY_WORDS+').*)$','i'));
+    if (m2 && m2[1].trim().length > 1) return {name:m2[1].trim(), qty:m2[2].trim()};
+    // "À vontade" no final
+    const m3 = line.match(/^(.+?)\s+((?:À|A)\s+vontade.*)$/i);
+    if (m3 && m3[1].trim().length > 1) return {name:m3[1].trim(), qty:m3[2].trim()};
     return null;
   }
 
@@ -8275,7 +8280,7 @@ function renderDiet(){
       +meal.items.map((item,ii)=>{
         const hasSubs=Array.isArray(item.substitutions)&&item.substitutions.length>0;
         const kcalBadge=item.calories>0?'<span style="font-family:Space Mono,monospace;font-size:9px;color:var(--muted2);margin-left:4px">'+item.calories+'kcal</span>':'';
-        const qtyBadge=item.quantity?'<span style="font-family:Space Mono,monospace;font-size:9px;color:var(--muted);margin-left:4px">'+escHtml(item.quantity)+'</span>':'';
+        const qtyBadge=item.quantity?'<span style="font-family:Space Mono,monospace;font-size:9px;color:var(--acid2);background:rgba(212,255,0,.07);border:1px solid rgba(212,255,0,.15);border-radius:4px;padding:1px 5px;margin-left:4px">'+escHtml(item.quantity)+'</span>':'';
         const subsBtn=hasSubs?'<button class="food-subst-btn" onclick="event.stopPropagation();openSubstModal(\''+escHtml((item.name||item.text).replace(/'/g,''))+'\',\''+encodeURIComponent(JSON.stringify(item.substitutions))+'\')">⇄ '+item.substitutions.length+'</button>':'';
         return '<div class="food-item'+(item.done?' ticked':'')+(item.optional?' optional':'')+'" id="fi'+mi+'_'+ii+'" onclick="toggleItem('+mi+','+ii+')">'
           +'<div class="food-check">'+(item.done?'<span class="icon icon-check" style="width:11px;height:11px"></span>':'')+'</div>'
