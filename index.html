@@ -462,6 +462,16 @@ body{padding-bottom:0}
 .streak-pill{display:flex;align-items:center;gap:5px;background:var(--card2);border:1px solid var(--border2);border-radius:100px;padding:5px 11px}
 .streak-pill .num{font-family:'Bebas Neue',sans-serif;font-size:19px;color:var(--acid);line-height:1}
 .streak-pill .lbl{font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:1.5px}
+/* ── Treino Registrado — Celebração ── */
+.workout-toast{position:fixed;top:0;left:0;right:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0;pointer-events:none;opacity:0;transform:translateY(-100%);transition:opacity .35s cubic-bezier(.22,1,.36,1),transform .35s cubic-bezier(.22,1,.36,1)}
+.workout-toast.show{opacity:1;transform:translateY(0)}
+.workout-toast-inner{width:100%;padding:18px 20px 16px;display:flex;flex-direction:column;align-items:center;gap:4px;box-shadow:0 4px 32px rgba(0,0,0,.5)}
+.workout-toast-icon{font-size:36px;line-height:1;margin-bottom:4px;animation:wtBounce .5s cubic-bezier(.34,1.56,.64,1)}
+@keyframes wtBounce{from{transform:scale(.5) rotate(-10deg);opacity:0}to{transform:scale(1) rotate(0deg);opacity:1}}
+.workout-toast-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.4)}
+.workout-toast-sub{font-family:'Space Mono',monospace;font-size:11px;color:rgba(255,255,255,.8);letter-spacing:.5px}
+.workout-toast-kcal{font-family:'Bebas Neue',sans-serif;font-size:18px;color:rgba(255,255,255,.95);margin-top:2px}
+.workout-toast-msg{font-size:12px;color:rgba(255,255,255,.7);font-style:italic;margin-top:2px}
 
 /* ══ WRAP & VIEWS ══ */
 .wrap{max-width:520px;margin:0 auto;padding:0;overflow:hidden;position:relative;height:calc(100vh - 54px)}
@@ -4258,7 +4268,7 @@ function finishOnboarding(){
   if(!db.settings)db.settings={};
   // Dieta sempre ativa — nao desativar via onboarding
   // showDietTab controlado pelo card de onboarding
-  db.onboardingVersion = 2;
+  db.onboardingVersion = 3;
   save();
   _showApp();
 }
@@ -4450,13 +4460,13 @@ window.addEventListener('load', () => {
 
   setTimeout(() => {
     // Verifica se já viu o novo welcome (step 1 com raio)
-    const hasSeenWelcomeV2 = !!(db.settings && db.settings._seenWelcomeV3);
+    const hasSeenWelcomeV2 = !!(db.settings && db.settings._seenWelcomeV4);
 
     if (!hasSeenWelcomeV2) {
       // Todos os usuários veem o step 1 pelo menos uma vez
       _hideSplash(_showOnboarding);
     } else if (isReturningUser) {
-      const hasSeenV2 = db.onboardingVersion >= 2;
+      const hasSeenV2 = db.onboardingVersion >= 3; // v3: força onboarding completo para usuários existentes
       if (!hasSeenV2) { _hideSplash(_showReviewModal); }
       else { _hideSplash(_showApp); }
     } else {
@@ -4477,7 +4487,7 @@ function _showReviewModal() {
   obGoTo(1); // step 1 = Esportes
 }
 function skipReview() {
-  db.onboardingVersion = 2;
+  db.onboardingVersion = 3;
   save();
   var modal = document.getElementById('reviewModal');
   if (modal) modal.style.display = 'none';
@@ -4521,7 +4531,7 @@ function _finishSportsReview() {
   var dietCard = document.querySelector('[data-act="_diet"]');
   if (!db.settings) db.settings = {};
   // showDietTab controlado pelo card de onboarding
-  db.onboardingVersion = 2;
+  db.onboardingVersion = 3;
   save();
   window._reviewMode = false;
   var steps = document.querySelectorAll('#obSteps .ob-step');
@@ -6552,9 +6562,7 @@ function qlSave(){
   Sync.upload().catch(()=>{});
   closeSheet('sheetQuickLog');renderActCards();renderStats(currentPeriod);refreshToday('workout');
   Haptic.medium(); Sound.pop();
-  toast('✓ Treino registrado · '+kcal+' kcal');
-}
-function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+  showWorkoutToast(qlType, kcal);{return s.charAt(0).toUpperCase()+s.slice(1);}
 function latestWeight(){
   if(!db.weight.length) return 0;
   return [...db.weight].sort((a,b)=>b.ts-a.ts)[0]?.kg||0;
@@ -6616,7 +6624,7 @@ function logActivity(type){
   renderStats(currentPeriod);
   refreshToday('workout');
   Haptic.medium(); Sound.pop();
-  toast('✓ Treino registrado · '+s.kcal+' kcal');
+  showWorkoutToast(type, s.kcal);
 }
 
 // ── Workout: Activity Metadata ──────────────────────────────────────
@@ -7144,7 +7152,8 @@ async function extractPDF(file){
         const gap=cur.x-(prev.x+prev.w);
         const noSp=!/\s$/.test(prev.str)&&!/^\s/.test(cur.str);
         if(noSp&&gap<1.5)line+=cur.str;
-        else if(noSp&&gap<8&&/[a-záàãâéêíóôõúüçA-ZÁÀÃÂÉÊÍÓÔÕÚÜÇ]$/i.test(prev.str)&&/^[a-záàãâéêíóôõúüçA-ZÁÀÃÂÉÊÍÓÔÕÚÜÇ]/i.test(cur.str))line+=cur.str;
+        else if(noSp&&gap<25&&/[A-ZÁÀÃÂÉÊÍÓÔÕÚÜÇ]$/.test(prev.str)&&/^[A-ZÁÀÃÂÉÊÍÓÔÕÚÜÇ]/.test(cur.str))line+=cur.str;
+        else if(noSp&&gap<8&&/[a-záàãâéêíóôõúüç]$/i.test(prev.str)&&/^[a-záàãâéêíóôõúüç]/i.test(cur.str))line+=cur.str;
         else line+=' '+cur.str.trimStart();
       });
       line=line.replace(/\s{2,}/g,' ').replace(/\u00AD/g,'').trim();
@@ -7156,6 +7165,10 @@ async function extractPDF(file){
   text=text.replace(/([a-záàãâéêíóôõúüç])-\n([a-záàãâéêíóôõúüç])/gi,'$1$2');
   text=text.replace(/\b(\d)\s(?=\d)/g,'$1');
   text=text.replace(/\n{4,}/g,'\n\n');
+  // Juntar "HH:MM\n- Refeição" em uma linha (PDF extrai em y-coords diferentes)
+  text=text.replace(/(\d{1,2}:\d{2})\n([-–]\s*\S)/gm,'$1 $2');
+  // Juntar "HH:MM\nRefeição" quando não há traço
+  text=text.replace(/(\d{1,2}:\d{2})\n([A-ZÁÀÃÂÉÊÍÓÔÕÚÜÇ][a-záàãâéêíóôõúüç])/gm,'$1 - $2');
   return text.trim();
 }
 function setupDrag(zoneId,inputId){
@@ -7386,8 +7399,9 @@ const MEAL_TRIGGERS=['primeira','segunda','terceira','quarta','quinta','sexta','
 
 // ── Detecta qual formato é o texto da dieta ──────────────────────────
 function detectDietFormat(raw) {
-  // Formato 2 (Manoel Victor): tem padrão "HH:MM - Nome" em linha própria
-  if (/^\d{2}:\d{2}\s*[-–]\s*\w/m.test(raw)) return 'table';
+  // Formato 2 (Manoel Victor): tem padrão "HH:MM - Nome" ou nome de refeição sozinho
+  if (/^\d{1,2}[h:]\d{2}/m.test(raw)) return 'table';
+  if (/^(Café da manhã|Desjejum|Almoço|Jantar|Lanche|Colação)$/im.test(raw)) return 'table';
   // Formato 1 (Dr. Rômulo): tem "REFEIÇÃO" em maiúsculas com número
   if (/\b(PRIMEIRA|SEGUNDA|TERCEIRA|QUARTA|QUINTA|SEXTA|SÉTIMA)\s+REFEIÇÃO/i.test(raw)) return 'numbered';
   return 'numbered'; // fallback
@@ -7405,7 +7419,7 @@ function parseDietTableFormat(raw) {
   let curSubstTarget = null;
   let collectingSubst = false;
 
-  const mealHeaderRe = /^(\d{2}:\d{2})\s*[-–]\s*(.+)$/;
+  const mealHeaderRe = /^(\d{1,2}[h:]\d{2})\s*[-–]?\s*(?:[-–]\s*)?([A-ZÁÀÃÂÉÊÍÓÔÕÚÜÇ][^\n]{2,})$/i;
   const opcaoRe = /^OPÇÃO\b/i; // captura OPÇÃO - SANDUÍCHE, OPÇÃO (MACARRÃO), OPÇÃO FINAL DE SEMANA
   const substHeaderRe = /^[•·]\s*Op[cç][oõ]es de substitui[çc][aã]o para (.+?):\s*$/i;
   const pageFooterRe = /^Página \d+\/\d+/i;
@@ -7468,13 +7482,18 @@ function parseDietTableFormat(raw) {
 
     // Cabeçalho de refeição com horário → sai do modo OPÇÃO
     const headerMatch = line.match(mealHeaderRe);
-    if (headerMatch) {
+    // Fallback: nome de refeição conhecido sem horário (PDF pode separar "09:00" do nome)
+    const knownMealRe = /^(Café da manhã|Desjejum|Colação|Almoço|Lanche da manhã|Lanche da tarde|Lanche|Jantar|Ceia|Pré-treino|Pós-treino)$/i;
+    const isKnownMeal = !inOpcao && knownMealRe.test(line.trim());
+    if (headerMatch || isKnownMeal) {
       inOpcao = false;
       collectingSubst = false;
       curSubstTarget = null;
       if (curOpcao && curOpcao.items.length > 0) { opcoes.push(curOpcao); curOpcao = null; }
       if (cur && cur.items.length > 0) meals.push(cur);
-      cur = { title: fmtTitle(headerMatch[2].trim()), time: headerMatch[1], items: [], _substMap: {} };
+      const mealName = headerMatch ? headerMatch[2].trim() : line.trim();
+      const mealTime = headerMatch ? headerMatch[1] : '';
+      cur = { title: fmtTitle(mealName), time: mealTime, items: [], _substMap: {} };
       return;
     }
 
@@ -7573,10 +7592,35 @@ function parseDiet(raw){
     const subs=parts.slice(1).map(p=>({name:p.replace(/^\d+(?:[.,]\d+)?\s*[Gg]\s+[Dd][Ee]\s+/,'').replace(/^\d+(?:[.,]\d+)?\s*[Gg]\b\s*/,'').trim(),grams:(()=>{const m=p.match(/(\d+(?:[.,]\d+)?)\s*[Gg]\b/);return m?parseFloat(m[1]):0;})(),calories:0,text:p})).filter(s=>s.name.length>1);
     return{text:main,name:main.replace(/^\d+(?:[.,]\d+)?\s*[Gg]\s+[Dd][Ee]\s+/i,'').replace(/^\d+(?:[.,]\d+)?\s*[Gg]\b\s*/i,'').trim(),quantity:grams?grams+'g':'',grams,done:false,optional:isOptional(main),calories:0,substitutions:subs};
   }
+  // rastrear a linha bruta para manter contexto OU entre quebras de linha do PDF
+  let _lastRaw='';
+  // Detecta marca em parênteses: "(VITAFOR, DUX OU PERFORMANCE)"
+  const isBrandParens=i=>/^\(/.test(i)&&/\b(OU|DUX|VITAFOR|GROWTH|PROBIÓTICA|INTEGRAL MÉDICA|FITFAST|MAXTITANIUM|PERFORMANCE)\b/i.test(i);
+  // Detecta adjetivo/modificador solto que é continuação (ex: "LIGHT", "INTEGRAL", "INGLESA")
+  const isTrailingWord=i=>/^(LIGHT|INTEGRAL|INGLESA|DESNATADO|COZIDO|GRELHADO|ASSADO|MEXIDO|RALADA|FRESCAL|CREMOSO|CONCENTRADO)$/i.test(i.trim());
   lines.forEach(line=>{
     if(isIgnore(line))return;
-    if(isHeader(line)){if(cur&&cur.items.length>0)meals.push(cur);const t=cleanH(line);cur={title:fmtTitle(t.length>2?t:line.replace(/[:\-–—]+$/,'').trim()),items:[]};}
-    else if(cur){const item=cleanI(line);if(item.length<=2)return;const lastItem=cur.items[cur.items.length-1];if(lastItem&&shouldMerge(lastItem,item)){lastItem.text=lastItem.text+' '+item;lastItem.name=lastItem.text;}else{cur.items.push(parseF1Item(item));}}
+    if(isHeader(line)){_lastRaw='';if(cur&&cur.items.length>0)meals.push(cur);const t=cleanH(line);cur={title:fmtTitle(t.length>2?t:line.replace(/[:\-–—]+$/,'').trim()),items:[]};}
+    else if(cur){
+      const item=cleanI(line);
+      if(item.length<=2)return;
+      // Ignorar marcas em parênteses
+      if(isBrandParens(item))return;
+      const lastItem=cur.items[cur.items.length-1];
+      // Merge via rawLine (mantém contexto OU que parseF1Item já consumiu)
+      const rawEndsWithContinue=/\b(OU|DE|E|,)\s*$/i.test(_lastRaw);
+      const itemIsContinue=/^(OU|DE|DO|DA|COM|SEM|PARA|E )\b/i.test(item)||isTrailingWord(item);
+      if(lastItem&&(shouldMerge(lastItem,item)||rawEndsWithContinue&&!isHeader(item))){
+        // Re-parsear com texto completo para capturar todas as alternativas OU
+        const newRaw=_lastRaw+' '+item;
+        _lastRaw=newRaw;
+        const reparsed=parseF1Item(newRaw);
+        Object.assign(lastItem,{text:reparsed.text,name:reparsed.name,quantity:reparsed.quantity,grams:reparsed.grams,substitutions:reparsed.substitutions});
+      }else{
+        _lastRaw=item;
+        cur.items.push(parseF1Item(item));
+      }
+    }
   });
   if(cur&&cur.items.length>0)meals.push(cur);
   if(!meals.length){
@@ -8238,7 +8282,7 @@ function updateDietProgress(){
   const rp=document.getElementById('ringPct');if(rp)rp.textContent=pct+'%';
   const bf=document.getElementById('barFill');if(bf)bf.style.width=pct+'%';
   const ds=document.getElementById('daySub');if(ds)ds.textContent=done+' de '+total+' itens obrigatórios';
-  const _snEl=document.getElementById('streakNum');if(_snEl)_snEl.textContent=db.dailyStreak?.count||db.streak||0;
+  const _snEl=document.getElementById('streakNum');if(_snEl)_snEl.textContent=db.dailyStreak?.count||0;
 }
 function removeItem(mi,ii,e){e.stopPropagation();if(!confirm('Remover este item?'))return;db.meals[mi].items.splice(ii,1);save();renderDiet();keepCardState(mi);}
 function quickAddItem(mi){const t=prompt('Novo item:');if(t&&t.trim()){db.meals[mi].items.push({text:t.trim(),done:false,optional:false});save();renderDiet();keepCardState(mi);}}
@@ -8463,7 +8507,6 @@ let toastTimer;
 function toast(msg, dur=3200) {
   const el = document.getElementById('toast');
   el.textContent = msg;
-  // Tipo automático por prefixo emoji
   el.classList.remove('toast-err','toast-ok','toast-warn');
   if (msg.startsWith('❌') || msg.startsWith('⛔')) el.classList.add('toast-err');
   else if (msg.startsWith('✅') || msg.startsWith('✓')) el.classList.add('toast-ok');
@@ -8473,6 +8516,68 @@ function toast(msg, dur=3200) {
   toastTimer = setTimeout(() => {
     el.classList.remove('show','toast-err','toast-ok','toast-warn');
   }, dur);
+}
+
+// ── Celebração visual ao registrar treino ─────────────────────────
+const _WT_MSGS = {
+  gym:   ['Consistência é tudo!','Mais um tijolo na parede.','Treino no banco!','Disciplina em dia.'],
+  cross:  ['WOD concluído!','A intensidade é o caminho.','CrossFit no sangue.','Você foi lá e fez.'],
+  run:   ['Kilômetros somados.','Cada passada conta.','Corrida concluída!','A estrada te espera sempre.'],
+  beach:  ['Quadra dominada!','Beach no pé, resultado na mão.','Jogo encerrado!','Ponto pra você.'],
+  volei:  ['Rede cruzada!','Vôlei registrado.','Time que treina junto, vence junto.','Partida concluída!'],
+};
+const _WT_COLORS = {
+  gym:  'linear-gradient(160deg,#2a1200,#1a0a00)',
+  cross:'linear-gradient(160deg,#1a1a00,#141400)',
+  run:  'linear-gradient(160deg,#001a0d,#001508)',
+  beach:'linear-gradient(160deg,#1a0012,#12000c)',
+  volei:'linear-gradient(160deg,#001228,#000d20)',
+};
+const _WT_BORDER = {
+  gym:  'rgba(255,140,0,.6)',
+  cross:'rgba(212,255,0,.6)',
+  run:  'rgba(0,230,118,.6)',
+  beach:'rgba(255,110,180,.6)',
+  volei:'rgba(61,155,255,.6)',
+};
+let _wtTimer = null;
+function showWorkoutToast(type, kcal) {
+  // Remove anterior se existir
+  const old = document.getElementById('workoutToastEl');
+  if (old) old.remove();
+  clearTimeout(_wtTimer);
+
+  const m = ACT_META[type] || ACT_META.gym;
+  const msgs = _WT_MSGS[type] || _WT_MSGS.gym;
+  const msg = msgs[Math.floor(Math.random() * msgs.length)];
+  const bg = _WT_COLORS[type] || _WT_COLORS.gym;
+  const border = _WT_BORDER[type] || _WT_BORDER.gym;
+
+  const el = document.createElement('div');
+  el.id = 'workoutToastEl';
+  el.className = 'workout-toast';
+  el.innerHTML =
+    '<div class="workout-toast-inner" style="background:' + bg + ';border-bottom:2px solid ' + border + '">'
+    + '<div class="workout-toast-icon">' + m.icon + '</div>'
+    + '<div class="workout-toast-title">TREINO REGISTRADO</div>'
+    + '<div class="workout-toast-sub">' + escHtml(m.label).toUpperCase() + '</div>'
+    + (kcal ? '<div class="workout-toast-kcal">🔥 ' + kcal + ' kcal queimadas</div>' : '')
+    + '<div class="workout-toast-msg">' + escHtml(msg) + '</div>'
+    + '</div>';
+  document.body.appendChild(el);
+
+  // Animar entrada
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => { el.classList.add('show'); });
+  });
+
+  // Sair após 3.2s
+  _wtTimer = setTimeout(() => {
+    el.style.transition = 'opacity .4s ease, transform .4s ease';
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(-100%)';
+    setTimeout(() => el.remove(), 420);
+  }, 3200);
 }
 function confirmReset(){
   if(!confirm('⚠️ Isso vai LIMPAR TODA A DIETA (refeições e progresso).\nHistórico de treinos e peso é mantido.\n\nContinuar?'))return;
@@ -9241,16 +9346,25 @@ function autoBackupCheck() {
     Math.max(0, nextIn));
 
   // Export semanal: oferece download do JSON a cada 7 dias
+  // Só mostra se: tem dados reais + já passou 7 dias desde o primeiro uso
   const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
   const lastExport = db.settings?._lastExportOffer || 0;
-  if (now - lastExport >= WEEK_MS) {
-    // Aguarda 3s após init para não sobrecarregar a abertura
+  const firstUse = db._createdAt || now;
+  const hasRealData = (db.sessions?.length > 0) || (db.weight?.length > 0) || (db.meals?.length > 0);
+  const oldEnough = (now - firstUse) >= WEEK_MS; // usuário com pelo menos 7 dias de uso
+  if (lastExport === 0) {
+    // Primeira vez: registra o momento mas NÃO mostra o banner
+    if (!db.settings) db.settings = {};
+    db.settings._lastExportOffer = now;
+    save();
+  } else if (hasRealData && oldEnough && (now - lastExport) >= WEEK_MS) {
+    // Já tem dados, já tem 7 dias de uso, já passou 7 dias desde o último aviso
     setTimeout(() => {
       if (!db.settings) db.settings = {};
       db.settings._lastExportOffer = now;
       save();
       _showExportBanner();
-    }, 3000);
+    }, 8000); // mostra 8s após o app carregar, não imediatamente
   }
 }
 
@@ -9876,14 +9990,14 @@ function _renderAdminPanel() {
   actSec.appendChild(actLabel);
   actSec.appendChild(makeActBtn('Resetar tela de boas-vindas', 'var(--muted2)', function() {
     if (!db.settings) db.settings = {};
-    db.settings._seenWelcomeV3 = false;
+    db.settings._seenWelcomeV4 = false;
     save();
     toast('✅ Resetado — recarregue o app');
   }));
   actSec.appendChild(makeActBtn('Resetar onboarding completo', 'var(--red)', function() {
     if (!confirm('Resetar onboarding? O app vai recarregar.')) return;
     resetOnboarding();
-    if (db.settings) { db.settings._seenWelcomeV3 = false; db.onboardingVersion = 0; }
+    if (db.settings) { db.settings._seenWelcomeV4 = false; db.onboardingVersion = 0; }
     save();
     location.reload();
   }));
@@ -9893,7 +10007,7 @@ function _renderAdminPanel() {
 
 function adminResetWelcome() {
   if (!db.settings) db.settings = {};
-  db.settings._seenWelcomeV3 = false;
+  db.settings._seenWelcomeV4 = false;
   save();
   toast('✅ Tela de boas-vindas resetada — recarregue o app');
 }
@@ -11451,7 +11565,7 @@ function obGoNext() {
   // Ao sair do step 0 (welcome), marca que o usuário já viu o novo welcome
   if (obCurrentStep === 0) {
     if (!db.settings) db.settings = {};
-    db.settings._seenWelcomeV3 = true;
+    db.settings._seenWelcomeV4 = true;
     save();
     // Usuário existente: vai direto ao app após o welcome
     if (_isReturningUser()) {
