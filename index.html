@@ -7434,6 +7434,15 @@ function convertToStructuredDiet(legacyMeals) {
       const item = parseStructuredItem(rawText);
       item.done     = legacyItem.done     || false;
       item.optional = item.optional || legacyItem.optional || false;
+      // Preservar campos pré-parseados pelo parseDietTableFormat (Manoel Victor)
+      // parseStructuredItem só extrai qty simples tipo "100g"; a qty completa
+      // ("4 Colher(es) de sopa cheia(s) (100g)") vem do parseDietTableFormat
+      if (legacyItem.quantity && !item.quantity) item.quantity = legacyItem.quantity;
+      if (legacyItem.grams    && !item.grams)    item.grams    = legacyItem.grams;
+      if (legacyItem.calories > 0 && !item.calories) item.calories = legacyItem.calories;
+      if (legacyItem.substitutions && legacyItem.substitutions.length > 0 && item.substitutions.length === 0) {
+        item.substitutions = legacyItem.substitutions;
+      }
       items.push(item);
     });
 
@@ -7518,7 +7527,7 @@ function parseDietTableFormat(raw) {
     const m3 = s.match(/\((\d+(?:[,.]\d+)?)\s*ml\)/i); if (m3) return 0;
     return 0;
   }
-  function fmtQty(q) { return q.replace(/\s*\(\d+\s*(?:g|ml)\)$/i,'').trim(); }
+  function fmtQty(q) { return q.trim(); } // mantém a quantidade completa incluindo gramas
   function parseSubstLine(line) {
     return line.split(/\s*-\s*ou\s*-\s*/i).map(p=>p.trim()).filter(p=>p).map(p=>{
       const grams=extractGrams(p);
