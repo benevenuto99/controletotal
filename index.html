@@ -7183,41 +7183,72 @@ async function extractPDF(file){
   await _ensurePdfJs();
   const buf=await file.arrayBuffer();
   const pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
-  let lines=[];
+  const allLines=[];
+  const CLUSTER_Y=6;   // itens dentro de 6px vertical = mesma linha
+  const COLUMN_GAP=60; // gap horizontal >60px = separador de coluna (tabela)
+  const UPPER_JOIN=40; // gap horizontal <40px entre maiúsculas = juntar
+  const LOWER_JOIN=8;  // gap horizontal <8px entre minúsculas = juntar
+
   for(let p=1;p<=pdf.numPages;p++){
     const page=await pdf.getPage(p);
     const content=await page.getTextContent({normalizeWhitespace:true});
-    // Agrupa itens por linha usando tolerância maior (4px) para capturar células de tabela
-    const yMap={};
-    content.items.forEach(item=>{
-      if(!item.str||!item.str.trim())return;
-      const y=Math.round(item.transform[5]/4)*4; // tolerância 4px (era 2px)
-      if(!yMap[y])yMap[y]=[];
-      yMap[y].push({x:item.transform[4],w:item.width||0,str:item.str});
-    });
-    Object.keys(yMap).map(Number).sort((a,b)=>b-a).forEach(y=>{
-      const items=yMap[y].sort((a,b)=>a.x-b.x);
+    // Coletar itens não-vazios com posição
+    const items=content.items
+      .filter(it=>it.str&&it.str.trim())
+      .map(it=>({x:it.transform[4],y:it.transform[5],w:it.width||0,str:it.str}));
+    if(!items.length){allLines.push('');continue;}
+    // Ordenar por Y decrescente (topo da página), depois X crescente
+    items.sort((a,b)=>b.y-a.y||a.x-b.x);
+    // Agrupar em linhas por proximidade Y (clustering, não bucket fixo)
+    const rows=[];
+    let i=0;
+    while(i<items.length){
+      const rowY=items[i].y;
+      const row=[];
+      while(i<items.length&&Math.abs(items[i].y-rowY)<=CLUSTER_Y){
+        row.push(items[i]);i++;
+      }
+      if(row.length)rows.push(row.sort((a,b)=>a.x-b.x));
+    }
+    // Construir texto de cada linha
+    rows.forEach(row=>{
       let line='';
-      items.forEach((cur,i)=>{
-        if(i===0){line=cur.str;return;}
-        const prev=items[i-1];
+      row.forEach((cur,idx)=>{
+        if(idx===0){line=cur.str;return;}
+        const prev=row[idx-1];
         const gap=cur.x-(prev.x+prev.w);
-        const noSp=!/\s$/.test(prev.str)&&!/^\s/.test(cur.str);
-        if(noSp&&gap<1.5)line+=cur.str;
-        else if(noSp&&gap<40&&/[A-ZÁÀÃÂÉÊÍÓÔÕÚÜÇ]$/.test(prev.str)&&/^[A-ZÁÀÃÂÉÊÍÓÔÕÚÜÇ]/.test(cur.str))line+=cur.str;
-        else if(noSp&&gap<8&&/[a-záàãâéêíóôõúüç]$/i.test(prev.str)&&/^[a-záàãâéêíóôõúüç]/i.test(cur.str))line+=cur.str;
-        else line+='  '+cur.str.trimStart(); // 2 espaços para separar colunas de tabela
+        const prevTrimmed=prev.str.trimEnd();
+        const curTrimmed=cur.str.trimStart();
+        const prevEndsUpper=/[A-ZÁÀÃÂÉÊÍÓÔÕÚÜÇ]$/.test(prevTrimmed);
+        const curStartsUpper=/^[A-ZÁÀÃÂÉÊÍÓÔÕÚÜÇ]/.test(curTrimmed);
+        const prevEndsLower=/[a-záàãâéêíóôõúüç]$/.test(prevTrimmed);
+        const curStartsLower=/^[a-záàãâéêíóôõúüç]/.test(curTrimmed);
+        if(gap<1.5&&!/\s$/.test(prev.str)&&!/^\s/.test(cur.str)){
+          // Glifos tocando: juntar direto
+          line+=cur.str;
+        } else if(gap>=COLUMN_GAP){
+          // Grande gap = separador de coluna (tabela)
+          line+='  '+curTrimmed;
+        } else if(gap<UPPER_JOIN&&prevEndsUpper&&curStartsUpper){
+          // Maiúscula para maiúscula com gap pequeno: juntar (resolve DE+SJEJUM, A+RROZ)
+          line=line.trimEnd()+curTrimmed;
+        } else if(gap<LOWER_JOIN&&prevEndsLower&&curStartsLower){
+          // Minúscula para minúscula com gap pequeno: juntar
+          line=line.trimEnd()+curTrimmed;
+        } else {
+          line+=' '+curTrimmed;
+        }
       });
-      line=line.replace(/\u00AD/g,'').trim();
-      if(line)lines.push(line);
+      // Normalizar: 3+ espaços → 2 (preserva separador de coluna de 2 espaços)
+      line=line.replace(/\s{3,}/g,'  ').replace(/\u00AD/g,'').trim();
+      if(line)allLines.push(line);
     });
-    lines.push('');
+    allLines.push('');
   }
-  let text=lines.join('\n');
+  let text=allLines.join('\n');
   text=text.replace(/([a-záàãâéêíóôõúüç])-\n([a-záàãâéêíóôõúüç])/gi,'$1$2');
   text=text.replace(/\b(\d)\s(?=\d)/g,'$1');
   text=text.replace(/\n{4,}/g,'\n\n');
-  // Juntar "HH:MM\n- Refeição" ou "HH:MM\nRefeição" em uma linha
   text=text.replace(/(\d{1,2}:\d{2})\n([-–]\s*\S)/gm,'$1 $2');
   text=text.replace(/(\d{1,2}:\d{2})\n([A-ZÁÀÃÂÉÊÍÓÔÕÚÜÇ][a-záàãâéêíóôõúüç])/gm,'$1 - $2');
   return text.trim();
@@ -7269,10 +7300,11 @@ function createDietItem(name, quantity = '', calories = 0, opts = {}) {
  * @param {string}     name  Meal name, e.g. "Desjejum"
  * @param {Object[]}   items Array of createDietItem() objects
  */
-function createDietMeal(name, items = []) {
+function createDietMeal(name, items = [], opts = {}) {
   return {
     name:  String(name).trim(),
     items: items,
+    time:  opts.time || '',
   };
 }
 
@@ -7307,7 +7339,7 @@ const SUBST_PATTERN = /^(?:ou[:\s]+|\/\s*)/i;
  * Key = regex pattern, value = canonical meal name.
  */
 const MEAL_NAME_MAP = [
-  { re: /desjejum|café\s*da\s*manhã|cafe\s*da\s*manha/i,    name: 'Desjejum'  },
+  { re: /desjejum|café\s*da\s*manhã|cafe\s*da\s*manha/i,    name: 'Café da manhã' },
   { re: /colação\s*1|lanche\s*1|lanche\s*manh[aã]/i,        name: 'Colação 1' },
   { re: /almoço|almoco/i,                                    name: 'Almoço'    },
   { re: /colação\s*2|lanche\s*2|lanche\s*tarde/i,           name: 'Colação 2' },
@@ -7380,7 +7412,10 @@ function parseStructuredItem(rawText, isSubstitution = false) {
  */
 function convertToStructuredDiet(legacyMeals) {
   const structuredMeals = legacyMeals.map(legacyMeal => {
-    const mealName = resolveStructuredMealName(legacyMeal.title || 'Refeição');
+    // Se tem horário (Manoel Victor) usa nome original; senão normaliza (Dr. Rômulo)
+    const mealName = legacyMeal.time
+      ? (legacyMeal.title || 'Refeição')
+      : resolveStructuredMealName(legacyMeal.title || 'Refeição');
     const items    = [];
 
     legacyMeal.items.forEach(legacyItem => {
@@ -7400,7 +7435,7 @@ function convertToStructuredDiet(legacyMeals) {
       items.push(item);
     });
 
-    return createDietMeal(mealName, items);
+    return createDietMeal(mealName, items, { time: legacyMeal.time || '' });
   });
 
   return { type: 'structured', meals: structuredMeals };
@@ -7666,7 +7701,7 @@ function parseDiet(raw){
       // Merge via rawLine (mantém contexto OU que parseF1Item já consumiu)
       const rawEndsWithContinue=/\b(OU|DE|E|,)\s*$/i.test(_lastRaw);
       const itemIsContinue=/^(OU|DE|DO|DA|COM|SEM|PARA|E )\b/i.test(item)||isTrailingWord(item);
-      if(lastItem&&(shouldMerge(lastItem,item)||rawEndsWithContinue&&!isHeader(item))){
+      if(lastItem&&(shouldMerge(lastItem,item)||((rawEndsWithContinue||itemIsContinue)&&!isHeader(item)))){
         // Re-parsear com texto completo para capturar todas as alternativas OU
         const newRaw=_lastRaw+' '+item;
         _lastRaw=newRaw;
