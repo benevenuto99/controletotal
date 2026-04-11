@@ -1948,8 +1948,11 @@ select option{background:var(--card2)}
 .diet-opcoes-sub{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-top:1px}
 .diet-opcoes-chevron{font-size:14px;color:var(--muted);flex-shrink:0;transition:transform .2s}
 .diet-opcoes-body{border-top:1px solid var(--border);padding:10px 14px 14px}
-.diet-opcao-card{margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)}
-.diet-opcao-card:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+.diet-opcao-card{margin-bottom:10px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--card)}
+.diet-opcao-card:last-child{margin-bottom:0}
+.diet-opcao-header{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;cursor:pointer;-webkit-tap-highlight-color:transparent;gap:8px}
+.diet-opcao-header:active{background:rgba(255,255,255,.04)}
+.diet-opcao-body{border-top:1px solid var(--border);padding:8px 13px 12px}
 .diet-opcao-title{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.8px;color:var(--acid2);margin-bottom:8px}
 .diet-opcao-item{display:flex;align-items:flex-start;gap:8px;padding:4px 0}
 .diet-opcao-dot{color:var(--muted2);font-size:16px;line-height:1.3;flex-shrink:0}
@@ -4435,6 +4438,27 @@ function _revealApp() {
 })();
 
 window.addEventListener('load', () => {
+  // ── INTERCEPTAR BOTÃO VOLTAR ANDROID ────────────────────────────
+  // Empurra um estado no histórico para capturar o back button
+  if (history.pushState) {
+    history.pushState({ ct: true }, '', location.href);
+    window.addEventListener('popstate', function onBack(e) {
+      // Sempre repor o estado para continuar capturando
+      history.pushState({ ct: true }, '', location.href);
+      // Se algum sheet/modal estiver aberto, fechar e não sair
+      const openSheet = document.querySelector('.sheet-overlay.open, .subst-modal-overlay.open');
+      if (openSheet) {
+        openSheet.classList.remove('open');
+        return;
+      }
+      // Confirmar saída do app
+      if (confirm('Deseja fechar o Controle Total?')) {
+        // Remover listener e sair de verdade
+        window.removeEventListener('popstate', onBack);
+        history.go(-2);
+      }
+    });
+  }
   // ── FAILSAFE ABSOLUTO: splash some em no máximo 8s, independente de qualquer coisa ──
   // Isso garante que o usuário nunca fica preso na splash eternamente
   const _absoluteBootTimeout = setTimeout(() => {
@@ -4488,15 +4512,12 @@ window.addEventListener('load', () => {
 
   setTimeout(() => {
     // Verifica se já viu o novo welcome (step 1 com raio)
-    const hasSeenWelcomeV2 = !!(db.settings && db.settings._seenWelcomeV4);
-
-    if (!hasSeenWelcomeV2) {
-      // Todos os usuários veem o step 1 pelo menos uma vez
-      _hideSplash(_showOnboarding);
-    } else if (isReturningUser) {
-      const hasSeenV2 = db.onboardingVersion >= 3; // v3: força onboarding completo para usuários existentes
-      if (!hasSeenV2) { _hideSplash(_showReviewModal); }
-      else { _hideSplash(_showApp); }
+    // Usuário já completou onboarding → direto ao app
+    const completedOnboarding = db.onboardingVersion >= 3;
+    if (completedOnboarding && isReturningUser) {
+      _hideSplash(_showApp);
+    } else if (!!(db.settings && db.settings._seenWelcomeV4) && isReturningUser) {
+      _hideSplash(_showReviewModal);
     } else {
       _hideSplash(_showOnboarding);
     }
@@ -7451,7 +7472,7 @@ function parseDietTableFormat(raw) {
   const pageFooterRe = /^Página \d+\/\d+/i;
   const observRe     = /^Observa[çc][oõ]es:/i;
   // Linha que parece quantidade: começa com dígito, fração ou "À vontade"
-  const qtyRe = /^(\d[\d.,\/½¼¾]?\s+|[½¼¾]\s+|À vontade|A vontade)/i;
+  const qtyRe = /^(\d+[\d.,\/]*\s+|[½¼¾]\s+|À vontade|A vontade)/i;
 
   function extractGrams(s) {
     const m = s.match(/\((\d+(?:[,.]\d+)?)\s*g\)/i); if (m) return parseFloat(m[1].replace(',','.'));
@@ -7627,7 +7648,7 @@ function parseDiet(raw){
   // Detecta marca em parênteses: "(VITAFOR, DUX OU PERFORMANCE)"
   const isBrandParens=i=>/^\(/.test(i)&&/\b(OU|DUX|VITAFOR|GROWTH|PROBIÓTICA|INTEGRAL MÉDICA|FITFAST|MAXTITANIUM|PERFORMANCE)\b/i.test(i);
   // Detecta adjetivo/modificador solto que é continuação (ex: "LIGHT", "INTEGRAL", "INGLESA")
-  const isTrailingWord=i=>/^(LIGHT|INTEGRAL|INGLESA|DESNATADO|COZIDO|GRELHADO|ASSADO|MEXIDO|RALADA|FRESCAL|CREMOSO|CONCENTRADO)$/i.test(i.trim());
+  const isTrailingWord=i=>/^(LIGHT|INTEGRAL|INGLESA|INTEIROS|DESNATADO|COZIDO|GRELHADO|ASSADO|MEXIDO|RALADA|FRESCAL|CREMOSO|CONCENTRADO|REFOGADO|DESFIADO|ENLATADO|COZIDA|ASSADA|GRELHADA|OU|COM\s|SEM\s)$/i.test(i.trim());
   lines.forEach(line=>{
     if(isIgnore(line))return;
     if(isHeader(line)){_lastRaw='';if(cur&&cur.items.length>0)meals.push(cur);const t=cleanH(line);cur={title:fmtTitle(t.length>2?t:line.replace(/[:\-–—]+$/,'').trim()),items:[]};}
@@ -7805,7 +7826,6 @@ function renderFreeMealBanner(){
 
 // ── Renderiza seção informativa das opções alternativas ───────────────
 function renderDietOpcoes() {
-  // Remove seção anterior
   const existing = document.getElementById('dietOpcoesSection');
   if (existing) existing.remove();
 
@@ -7819,45 +7839,62 @@ function renderDietOpcoes() {
   section.id = 'dietOpcoesSection';
   section.className = 'diet-opcoes-section';
 
+  // Cada OPÇÃO vira um card individual colapsável
+  const cardsHtml = opcoes.map((op, idx) => {
+    const bodyId = 'opcaoBody_' + idx;
+    const chevId = 'opcaoChev_' + idx;
+    // Itens como lista simples — nome + quantidade em linha única
+    const itemsText = op.items.map(it => {
+      const qty = it.quantity || (it.optional ? 'à vontade' : '');
+      return '<div class="diet-opcao-item">'
+        + '<span class="diet-opcao-dot">·</span>'
+        + '<div class="diet-opcao-item-body">'
+        + '<span class="diet-opcao-name">' + escHtml(it.text) + '</span>'
+        + (qty ? '<span class="diet-opcao-qty">' + escHtml(qty) + '</span>' : '')
+        + '</div></div>';
+    }).join('');
+
+    return '<div class="diet-opcao-card">'
+      + '<div class="diet-opcao-header" onclick="toggleOpcao(\'' + bodyId + '\',\'' + chevId + '\')">'
+      + '<div class="diet-opcao-title">' + escHtml(op.title) + '</div>'
+      + '<div style="display:flex;align-items:center;gap:6px">'
+      + '<span style="font-family:Space Mono,monospace;font-size:9px;color:var(--muted2)">'
+      + op.items.length + ' itens</span>'
+      + '<span class="diet-opcoes-chevron" id="' + chevId + '">▾</span>'
+      + '</div>'
+      + '</div>'
+      + '<div class="diet-opcao-body" id="' + bodyId + '" style="display:none">'
+      + itemsText
+      + '</div>'
+      + '</div>';
+  }).join('');
+
   section.innerHTML =
-    '<div class="diet-opcoes-header" onclick="toggleDietOpcoes()">'
+    '<div class="diet-opcoes-header" style="cursor:default;border-bottom:1px solid var(--border)">'
     + '<div class="diet-opcoes-label">'
-    + '<span style="font-size:16px">📋</span>'
+    + '<span style="font-size:15px">📋</span>'
     + '<div>'
-    + '<div class="diet-opcoes-title">Opções Alternativas</div>'
-    + '<div class="diet-opcoes-sub">' + opcoes.length + ' opção' + (opcoes.length > 1 ? 'ões' : '') + ' do nutricionista — somente informativo</div>'
-    + '</div>'
-    + '</div>'
-    + '<span class="diet-opcoes-chevron" id="dietOpcoesChevron">▾</span>'
-    + '</div>'
-    + '<div class="diet-opcoes-body" id="dietOpcoesBody" style="display:none">'
-    + opcoes.map(op =>
-        '<div class="diet-opcao-card">'
-        + '<div class="diet-opcao-title">' + escHtml(op.title) + '</div>'
-        + op.items.map(it =>
-            '<div class="diet-opcao-item">'
-            + '<span class="diet-opcao-dot">·</span>'
-            + '<div class="diet-opcao-item-body">'
-            + '<span class="diet-opcao-name">' + escHtml(it.text) + '</span>'
-            + (it.quantity ? '<span class="diet-opcao-qty">' + escHtml(it.quantity) + '</span>' : '')
-            + (it.optional ? '<span class="optional-tag">à vontade</span>' : '')
-            + '</div>'
-            + '</div>'
-          ).join('')
-        + '</div>'
-      ).join('')
+    + '<div class="diet-opcoes-title">Opções do Nutricionista</div>'
+    + '<div class="diet-opcoes-sub">toque numa opção para ver os itens — apenas informativo</div>'
+    + '</div></div></div>'
+    + '<div style="padding:10px 14px 14px">'
+    + cardsHtml
     + '</div>';
 
   list.after(section);
 }
 
-function toggleDietOpcoes() {
-  const body = document.getElementById('dietOpcoesBody');
-  const chev = document.getElementById('dietOpcoesChevron');
+function toggleOpcao(bodyId, chevId) {
+  const body = document.getElementById(bodyId);
+  const chev = document.getElementById(chevId);
   if (!body) return;
   const open = body.style.display !== 'none';
   body.style.display = open ? 'none' : 'block';
   if (chev) chev.textContent = open ? '▾' : '▴';
+}
+
+function toggleDietOpcoes() {
+  // mantida por compatibilidade
 }
 
 // ── isStructuredDiet — true when db.structuredDiet has real items ──
@@ -8171,7 +8208,7 @@ function renderStructuredMealCard(meal,mi){
     +'<div class="meal-circle" onclick="sdi_markAll('+mi+')" title="Marcar tudo">'+(allDone?'<span class="icon icon-check" style="font-size:13px"></span>':'')+'</div>'
     +'<div class="meal-title-block" onclick="toggleMeal('+mi+')">'
     +'<div class="meal-name">'+escHtml(meal.name)+'</div>'
-    +'<div class="meal-sub">'+doneCount+'/'+meal.items.length+' itens'+(reqItems.length<meal.items.length?' (alguns opcionais)':'')+'</div>'
+    +'<div class="meal-sub">'+(meal.time?'<span style="font-family:Space Mono,monospace;font-size:9px;color:var(--acid2);margin-right:5px">'+escHtml(meal.time)+'</span>':'')+doneCount+'/'+meal.items.length+' itens'+(reqItems.length<meal.items.length?' (alguns opcionais)':'')+'</div>'
     +'</div>'
     +'<div class="meal-hdr-r">'
     +'<span class="sdi-meal-kcal" id="sdi_meal_kcal_'+mi+'" onclick="sdi_editMealKcal('+mi+',event)" title="Editar total" style="cursor:pointer;display:'+(totalKcal?'block':'none')+'">' +(totalKcal?totalKcal+' kcal':'')+'</span>'
@@ -8227,7 +8264,7 @@ function renderDiet(){
       +'<div class="meal-circle" onclick="markAllMeal('+mi+')" title="Marcar tudo como concluído">'+(allDone?'<span class="icon icon-check" style="font-size:13px"></span>':'')+'</div>'
       +'<div class="meal-title-block" onclick="toggleMeal('+mi+')">'
       +'<div class="meal-name">'+escHtml(meal.title)+'</div>'
-      +'<div class="meal-sub">'+doneCount+'/'+meal.items.length+' itens'+(reqItems.length<meal.items.length?' (alguns opcionais)':'')+'</div></div>'
+      +'<div class="meal-sub">'+(meal.time?'<span style="font-family:Space Mono,monospace;font-size:9px;color:var(--acid2);margin-right:5px">'+escHtml(meal.time)+'h</span>':'')+doneCount+'/'+meal.items.length+' itens'+(reqItems.length<meal.items.length?' (alguns opcionais)':'')+'</div></div>'
       +'<div class="meal-hdr-r">'
       +'<div class="ico-btn" onclick="toggleMeal('+mi+')" title="Expandir/recolher"><span class="icon icon-chevron-down chevron" id="chev'+mi+'"></span></div>'
       +'<button class="ico-btn" onclick="openEditMeal('+mi+',event)" title="Editar"><span class="icon icon-pen"></span></button>'
@@ -8257,7 +8294,26 @@ function renderDiet(){
 }
 
 function keepCardState(mi){requestAnimationFrame(()=>{if(openCards.has(mi)){const b=document.getElementById('mb'+mi),c=document.getElementById('chev'+mi);if(b){b.classList.add('open');if(c)c.classList.add('open');}}});}
-function toggleMeal(mi){const b=document.getElementById('mb'+mi),c=document.getElementById('chev'+mi);b.classList.toggle('open');if(c)c.classList.toggle('open');if(b.classList.contains('open'))openCards.add(mi);else openCards.delete(mi);}
+function toggleMeal(mi){
+  const b=document.getElementById('mb'+mi),c=document.getElementById('chev'+mi);
+  if(!b)return;
+  const isOpening = !b.classList.contains('open');
+  if(isOpening){
+    // Fechar todos os outros abertos
+    openCards.forEach(other=>{
+      if(other!==mi){
+        const ob=document.getElementById('mb'+other),oc=document.getElementById('chev'+other);
+        if(ob){ob.classList.remove('open');if(oc)oc.classList.remove('open');}
+      }
+    });
+    openCards.clear();
+    b.classList.add('open');if(c)c.classList.add('open');
+    openCards.add(mi);
+  } else {
+    b.classList.remove('open');if(c)c.classList.remove('open');
+    openCards.delete(mi);
+  }
+}
 function toggleItem(mi,ii){
   const wasDone = db.meals[mi].items[ii].done;
   db.meals[mi].items[ii].done = !wasDone;
@@ -8612,8 +8668,12 @@ function showWorkoutToast(type, kcal) {
 function confirmReset(){
   if(!confirm('⚠️ Isso vai LIMPAR TODA A DIETA (refeições e progresso).\nHistórico de treinos e peso é mantido.\n\nContinuar?'))return;
   db.meals=[];if(db.structuredDiet)db.structuredDiet.meals=[];db.lastReset='';db.lastComplete='';
-  // Não escrever db.streak diretamente — é um getter. Zerar via dailyStreak:
+  db.dietOpcoes=[];
   if(db.dailyStreak){db.dailyStreak.count=0;db.dailyStreak.lastDate='';}
+  // Limpar campos de importação
+  ['rawTxt1','rawTxt2'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['pdfIn1','pdfIn2'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['fn1','fn2'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent='';el.style.display='none';}});
   save();renderDiet();refreshToday('diet');toast('Dieta removida');
 }
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
