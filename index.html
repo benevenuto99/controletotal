@@ -568,9 +568,9 @@ select option{background:var(--card2)}
 .food-item{display:flex;align-items:flex-start;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;transition:background .15s}
 .food-item:last-child{border-bottom:none}
 .food-item.optional{opacity:.7}
-.food-check{width:20px;height:20px;border-radius:5px;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;transition:all .2s;font-size:10px;color:transparent}
+.food-check{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;transition:all .25s;font-size:10px;color:transparent}
 .food-item.ticked .food-check{background:var(--acid);border-color:var(--acid);color:#000}
-.food-item.optional .food-check{border-style:dashed;border-color:var(--muted)}
+.food-item.optional .food-check{border-style:dashed;border-color:var(--muted);border-radius:50%}
 .food-text{font-size:13px;line-height:1.4;flex:1;transition:color .2s}
 .food-item.ticked .food-text{text-decoration:line-through;color:var(--muted)}
 .optional-tag{font-size:9px;font-family:'Space Mono',monospace;color:var(--muted);background:var(--border);padding:1px 5px;border-radius:4px;margin-left:4px;flex-shrink:0;margin-top:3px}
@@ -858,6 +858,15 @@ select option{background:var(--card2)}
 
 /* ══ SHEET ══ */
 .sheet-overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.82);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .25s}
+/* ── Edit Meal Fullscreen ── */
+.edit-meal-fullscreen{background:var(--dark)!important;backdrop-filter:none!important;display:flex;align-items:stretch;justify-content:stretch}
+.edit-meal-fullscreen.open{opacity:1;pointer-events:all}
+.edit-meal-modal{display:flex;flex-direction:column;width:100%;height:100%;background:var(--dark);padding:env(safe-area-inset-top,0px) 0 0}
+.edit-meal-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border2);gap:10px;background:var(--card2)}
+.edit-meal-hdr-title{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:var(--text);flex:1;text-align:center}
+.edit-meal-body{display:flex;flex-direction:column;flex:1;padding:16px;gap:12px;overflow-y:auto}
+.edit-meal-textarea{flex:1;min-height:0;resize:none;font-size:15px;line-height:1.7;font-family:'Space Mono',monospace;padding:14px;border-radius:12px;background:var(--card);border:1px solid var(--border2);color:var(--text);outline:none;transition:border-color .2s}
+.edit-meal-textarea:focus{border-color:var(--acid2)}
 .sheet-overlay.open{opacity:1;pointer-events:all}
 .sheet{position:absolute;bottom:0;left:0;right:0;background:var(--card2);border-radius:20px 20px 0 0;border-top:1px solid var(--border2);padding:16px 16px calc(28px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);max-height:92vh;overflow-y:auto}
 .sheet-overlay.open .sheet{transform:translateY(0)}
@@ -1879,9 +1888,9 @@ select option{background:var(--card2)}
 50%{transform:scale(1.1)}100%{transform:scale(1)}}
 
 /* ══ IMPROVED FOOD CHECK ══ */
-.food-check{width:22px!important;height:22px!important;border-radius:6px!important;border:2px solid var(--border2)!important}
+.food-check{width:20px!important;height:20px!important;border-radius:50%!important;border:1.5px solid var(--border2)!important}
 .food-item.ticked .food-check{background:var(--acid)!important;border-color:var(--acid)!important;animation:completePop .3s ease}
-.food-item.optional .food-check{border-style:dashed!important;border-color:var(--muted)!important}
+.food-item.optional .food-check{border-style:dashed!important;border-color:var(--muted)!important;border-radius:50%!important}
 
 
 /* ══ HOME MISSION CARDS — tappable ══ */
@@ -2274,6 +2283,20 @@ select option{background:var(--card2)}
 @keyframes obDotPulse{0%,80%,100%{transform:scale(.7);opacity:.4}40%{transform:scale(1);opacity:1}}
 #ob-start-btn{display:none;margin:12px 20px 24px;padding:15px;border:none;background:#c6ff00;color:#000;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;border-radius:13px;cursor:pointer;animation:obBubbleIn .4s ease both;box-shadow:0 0 24px rgba(198,255,0,.3)}
 .ob-ranking-img{width:100%;border-radius:12px;margin:8px 0 10px;animation:obBubbleIn .4s ease both;border:1px solid rgba(198,255,0,.15)}
+/* ── Diet Title Banner ── */
+.diet-title-banner{display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 16px 4px;margin-bottom:4px}
+.diet-title-text{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--acid2);text-align:center;line-height:1}
+.diet-title-edit{background:none;border:none;padding:4px;cursor:pointer;color:var(--acid2);opacity:.6;transition:opacity .2s;-webkit-tap-highlight-color:transparent}
+.diet-title-edit:active{opacity:1}
+/* ── Diet Title Modal ── */
+.diet-title-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+.diet-title-overlay.open{opacity:1;pointer-events:all}
+.diet-title-box{background:var(--card2);border-radius:20px 20px 0 0;border-top:1px solid var(--border2);padding:24px 20px calc(36px + env(safe-area-inset-bottom,0px));width:100%;max-width:480px}
+.diet-title-box h2{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--text);margin:0 0 6px}
+.diet-title-box p{font-size:12px;color:var(--muted2);margin:0 0 18px;font-family:'Space Mono',monospace}
+.diet-title-examples{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px}
+.diet-title-chip{background:rgba(212,255,0,.07);border:1px solid rgba(212,255,0,.18);color:var(--acid2);border-radius:20px;padding:5px 12px;font-size:11px;font-family:'Space Mono',monospace;cursor:pointer;transition:all .18s;-webkit-tap-highlight-color:transparent}
+.diet-title-chip:active{background:rgba(212,255,0,.18);transform:scale(.94)}
 </style>
 </head>
 <body>
@@ -3129,6 +3152,31 @@ select option{background:var(--card2)}
   <button class="btn" onclick="addMeal()"><span class="icon icon-check"></span> Salvar</button>
 </div></div>
 
+<!-- ── Diet Title Modal ── -->
+<div class="diet-title-overlay" id="dietTitleOverlay">
+  <div class="diet-title-box">
+    <h2>Dê um nome à sua dieta</h2>
+    <p>Como você quer chamar esse plano alimentar?</p>
+    <div class="diet-title-examples" id="dietTitleChips">
+      <span class="diet-title-chip" onclick="dietTitlePickChip(this)">Bulking</span>
+      <span class="diet-title-chip" onclick="dietTitlePickChip(this)">Cutting</span>
+      <span class="diet-title-chip" onclick="dietTitlePickChip(this)">Manutenção</span>
+      <span class="diet-title-chip" onclick="dietTitlePickChip(this)">Dieta de Março</span>
+      <span class="diet-title-chip" onclick="dietTitlePickChip(this)">Maratona</span>
+      <span class="diet-title-chip" onclick="dietTitlePickChip(this)">Campeonato</span>
+      <span class="diet-title-chip" onclick="dietTitlePickChip(this)">Low Carb</span>
+      <span class="diet-title-chip" onclick="dietTitlePickChip(this)">Definição</span>
+    </div>
+    <div class="field-grp" style="margin-bottom:16px">
+      <input type="text" id="dietTitleInput" placeholder="Ex: Dieta do Dr. Rômulo..." style="font-size:16px" aria-label="Nome da dieta">
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeDietTitleModal()">Pular</button>
+      <button class="btn" style="flex:2" onclick="saveDietTitle()"><span class="icon icon-check"></span> Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <div class="sheet-overlay" id="sheetChangeDiet" onclick="bgClose(event,'sheetChangeDiet')"><div class="sheet">
   <div class="sheet-handle"></div>
   <button class="sheet-back-btn" onclick="closeSheet('sheetChangeDiet')"><span class="icon icon-arrow-left"></span> Voltar sem salvar</button>
@@ -3145,13 +3193,19 @@ select option{background:var(--card2)}
   <button class="btn" style="margin-top:10px" onclick="processDiet(2)"><span class="icon icon-bolt"></span> Aplicar</button>
 </div></div>
 
-<div class="sheet-overlay" id="sheetEditMeal" onclick="bgClose(event,'sheetEditMeal')"><div class="sheet">
-  <div class="sheet-handle"></div>
-  <button class="sheet-back-btn" onclick="closeSheet('sheetEditMeal')"><span class="icon icon-arrow-left"></span> Voltar sem salvar</button>
-  <div class="sheet-title">Editar Refeição</div>
-  <div class="field-grp"><label class="field-label">Nome</label><input type="text" id="editMealName" aria-label="Nome da refeição"></div>
-  <div class="field-grp"><label class="field-label">Itens (um por linha — prefixe com * para opcional)</label><textarea id="editMealItems" style="min-height:110px" aria-label="Itens da refeição"></textarea></div>
-  <button class="btn" onclick="saveEditMeal()"><span class="icon icon-check"></span> Salvar</button>
+<div class="sheet-overlay edit-meal-fullscreen" id="sheetEditMeal"><div class="edit-meal-modal">
+  <div class="edit-meal-hdr">
+    <button class="sheet-back-btn" onclick="closeSheet('sheetEditMeal')" style="margin:0"><span class="icon icon-arrow-left"></span> Cancelar</button>
+    <span class="edit-meal-hdr-title">EDITAR REFEIÇÃO</span>
+    <button class="btn" style="padding:8px 18px;font-size:13px;min-width:0;border-radius:10px" onclick="saveEditMeal()"><span class="icon icon-check"></span> Salvar</button>
+  </div>
+  <div class="edit-meal-body">
+    <div class="field-grp"><label class="field-label">Nome da refeição</label><input type="text" id="editMealName" aria-label="Nome da refeição" style="font-size:16px"></div>
+    <div class="field-grp" style="flex:1;display:flex;flex-direction:column">
+      <label class="field-label">Itens — um por linha · prefixe com <code style="background:rgba(212,255,0,.1);color:var(--acid2);padding:1px 5px;border-radius:4px;font-size:11px">*</code> para opcional</label>
+      <textarea id="editMealItems" class="edit-meal-textarea" aria-label="Itens da refeição" placeholder="Arroz cozido — 4 Colher(es) (100g)&#10;Feijão cozido — 1 Concha (80g)&#10;* Vegetais Cozidos"></textarea>
+    </div>
+  </div>
 </div></div>
 
 <!-- Quick Log (Gym / Cross — unified intensity + duration) -->
@@ -7772,6 +7826,9 @@ async function processDiet(slot){
   db.meals=m;db.lastReset=todayStr();save();
   Sync.uploadDiet().catch(()=>{});
   closeSheet('sheetChangeDiet');renderDiet();refreshToday('diet');
+  // Perguntar nome da dieta após importar
+  db.dietTitle = '';save();renderDietTitle();
+  setTimeout(()=>openDietTitleModal(null), 400);
   const opcaoTxt=db.dietOpcoes&&db.dietOpcoes.length?' · '+db.dietOpcoes.length+' opções salvas':'';
   toast('✓ '+m.length+' refeições carregadas'+opcaoTxt+' — calculando calorias...');
   m=await calcDietCaloriesAI(m);
@@ -7781,6 +7838,66 @@ async function processDiet(slot){
 
 // ── Diet: Render & Interaction ──────────────────────────────────────
 //  RENDER DIET
+
+// ── Diet Title ───────────────────────────────────────────────────────
+function openDietTitleModal(onDone) {
+  const overlay = document.getElementById('dietTitleOverlay');
+  const input = document.getElementById('dietTitleInput');
+  if (!overlay || !input) { if(onDone) onDone(); return; }
+  input.value = db.dietTitle || '';
+  overlay._onDone = onDone || null;
+  overlay.classList.add('open');
+  setTimeout(() => input.focus(), 300);
+}
+function closeDietTitleModal() {
+  const overlay = document.getElementById('dietTitleOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('open');
+  if (overlay._onDone) { overlay._onDone(); overlay._onDone = null; }
+}
+function saveDietTitle() {
+  const input = document.getElementById('dietTitleInput');
+  const val = (input ? input.value.trim() : '') || '';
+  db.dietTitle = val;
+  save();
+  renderDietTitle();
+  closeDietTitleModal();
+}
+function dietTitlePickChip(el) {
+  const input = document.getElementById('dietTitleInput');
+  if (input) { input.value = el.textContent; input.focus(); }
+}
+function editDietTitle() {
+  const overlay = document.getElementById('dietTitleOverlay');
+  if (!overlay) return;
+  const input = document.getElementById('dietTitleInput');
+  if (input) input.value = db.dietTitle || '';
+  overlay._onDone = null;
+  overlay.classList.add('open');
+  setTimeout(() => input && input.focus(), 300);
+}
+function renderDietTitle() {
+  const existing = document.getElementById('dietTitleBanner');
+  if (existing) existing.remove();
+  const has = db.meals.length > 0 || isStructuredDiet();
+  if (!has) return;
+  const list = document.getElementById('mealList');
+  if (!list) return;
+  const title = db.dietTitle || '';
+  const banner = document.createElement('div');
+  banner.id = 'dietTitleBanner';
+  banner.className = 'diet-title-banner';
+  banner.innerHTML = title
+    ? '<span class="diet-title-text">' + escHtml(title) + '</span>'
+      + '<button class="diet-title-edit" onclick="editDietTitle()" title="Editar nome">'
+      + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
+      + '</button>'
+    : '<button class="diet-title-edit" style="opacity:.35;font-family:Space Mono,monospace;font-size:11px;display:flex;align-items:center;gap:5px;color:var(--muted2)" onclick="editDietTitle()">'
+      + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
+      + 'Dar nome à dieta</button>';
+  list.before(banner);
+}
+
 let openCards=new Set();
 let editMealIdx=-1;
 
@@ -8301,6 +8418,7 @@ function renderDiet(){
       if(openCards.has(mi)){requestAnimationFrame(()=>{const b=document.getElementById('mb'+mi),c=document.getElementById('chev'+mi);if(b){b.classList.add('open');if(c)c.classList.add('open');}});}
     });
     if(isStructuredDiet())sdi_updateDayKcalDisplay();
+    renderDietTitle();
     return;
   }
   // ── Legacy flat mode
@@ -8342,6 +8460,7 @@ function renderDiet(){
   });
   renderFreeMealBanner();
   renderDietOpcoes();
+  renderDietTitle();
 }
 
 function keepCardState(mi){requestAnimationFrame(()=>{if(openCards.has(mi)){const b=document.getElementById('mb'+mi),c=document.getElementById('chev'+mi);if(b){b.classList.add('open');if(c)c.classList.add('open');}}});}
@@ -8452,6 +8571,7 @@ function addMeal(){
   db.meals.push({title:name,items:items.map(t=>({text:t,done:false,optional:false}))});
   document.getElementById('newMealName').value='';document.getElementById('newMealItems').value='';
   save();closeSheet('sheetAddMeal');renderDiet();toast('Refeição adicionada');
+  if(!db.dietTitle){setTimeout(()=>openDietTitleModal(null),400);}
 }
 function checkStreak(){
   const all=db.meals.length>0&&db.meals.every(m=>m.items.filter(i=>!i.optional).every(i=>i.done));
