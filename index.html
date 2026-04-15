@@ -4389,11 +4389,10 @@ function _isReturningUser() {
 }
 
 function _showOnboardingDirect() {
-  // Fallback: vai direto para o onboarding (steps de configuração)
+  // Usuário já conhece o app — pula tela de apresentação, vai direto para esportes
   const ob = document.getElementById('onboarding');
   if (ob) ob.classList.remove('hidden');
-  obGoTo(0);
-  setTimeout(initBoltCanvas, 200);
+  obGoTo(1);
 }
 
 // _welcomeNext removida — unificada no step 1 do onboarding
@@ -4574,6 +4573,9 @@ window.addEventListener('load', () => {
       _hideSplash(_showApp);
     } else if (!!(db.settings && db.settings._seenWelcomeV4) && isReturningUser) {
       _hideSplash(_showReviewModal);
+    } else if (isReturningUser) {
+      // Usuário já conhece o app — pula tela de apresentação, vai direto para configuração
+      _hideSplash(_showOnboardingDirect);
     } else {
       _hideSplash(_showOnboarding);
     }
