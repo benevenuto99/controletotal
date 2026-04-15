@@ -2487,6 +2487,12 @@ select option{background:var(--card2)}
         <div class="ob-profile-row">
           <div class="field-grp" style="flex:1"><label class="field-label">Peso atual (kg)</label><input type="number" id="obWeight" step="0.1" placeholder="75.0" style="font-size:16px" aria-label="Peso atual em kg"></div>
         </div>
+        <div class="ob-profile-row">
+          <div class="field-grp" style="flex:1"><label class="field-label">Telefone / WhatsApp</label><input type="tel" id="obPhone" placeholder="(31) 99999-9999" style="font-size:16px" aria-label="Telefone ou WhatsApp"></div>
+        </div>
+        <div class="ob-profile-row">
+          <div class="field-grp" style="flex:1"><label class="field-label">Cidade</label><input type="text" id="obCity" placeholder="Ex: Cataguases" style="font-size:16px" aria-label="Cidade"></div>
+        </div>
       </div>
       <div style="background:rgba(212,255,0,.05);border:1px solid rgba(212,255,0,.12);border-radius:14px;padding:14px 16px;width:100%;margin-top:8px">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;color:var(--acid);margin-bottom:8px">🚀 Tudo pronto!</div>
@@ -3080,11 +3086,8 @@ select option{background:var(--card2)}
       </button>
       <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px">
         <div style="font-size:11px;color:var(--muted2);text-align:center;margin-bottom:12px">
-          Prefere continuar sem conta?
+          Um link de acesso será enviado para seu email.
         </div>
-        <button class="btn btn-ghost" style="font-size:13px" onclick="authSkip()">
-          Usar sem sincronização →
-        </button>
       </div>
     </div>
   </div>
@@ -3882,10 +3885,16 @@ if (db._schemaVersion < SCHEMA_VERSION) {
   try { localStorage.setItem(KEY, JSON.stringify(db)); } catch(e) {}
 }
 
-// ── save: persiste db via Storage (compressão automática) ────────────
+// ── save: persiste local + sync Supabase em background ───────────────
 function save(){
-  // Dispara compressão assíncrona — não bloqueia UI
   Storage.save(KEY, db).catch(e => console.warn('[CT] save error:', e));
+  // Sync em background só se logado — não bloqueia UI, debounce 2s
+  if (db._userId) {
+    clearTimeout(save._syncTimer);
+    save._syncTimer = setTimeout(() => {
+      Sync.upload().catch(e => console.warn('[CT] sync error:', e.message));
+    }, 2000);
+  }
 }
 
 // ── checkStorageHealth: roda 1x no init, avisa se >80% cheio ─────────
@@ -4319,9 +4328,13 @@ function finishOnboarding(){
   const name=document.getElementById('obName').value.trim();
   const wt=parseFloat(document.getElementById('obWeight').value);
   const bday=document.getElementById('obBirthday')?.value||'';
+  const phone=(document.getElementById('obPhone')?.value||'').trim();
+  const city=(document.getElementById('obCity')?.value||'').trim();
   if(name) db.profile.name=name;
   if(_obSex) db.profile.sexo=_obSex;
   if(bday) db.profile.birthday=bday;
+  if(phone) db.profile.phone=phone;
+  if(city) db.profile.city=city;
   if(wt>0){
     db.profile.weight=wt;
     db.weight.push({id:uuid(),kg:wt,date:todayStr(),time:new Date().toTimeString().slice(0,5),ts:Date.now(),createdAt:Date.now(),updatedAt:Date.now(),userId:db._userId||null,source:'manual'});
@@ -4389,10 +4402,11 @@ function _isReturningUser() {
 }
 
 function _showOnboardingDirect() {
-  // Usuário já conhece o app — pula tela de apresentação, vai direto para esportes
+  // Fallback: vai direto para o onboarding (steps de configuração)
   const ob = document.getElementById('onboarding');
   if (ob) ob.classList.remove('hidden');
-  obGoTo(1);
+  obGoTo(0);
+  setTimeout(initBoltCanvas, 200);
 }
 
 // _welcomeNext removida — unificada no step 1 do onboarding
@@ -4421,11 +4435,9 @@ async function _showApp() {
     const sb = await _getSupabase();
     const { data } = await sb.auth.getSession();
     const session = data?.session;
-    const skipped = localStorage.getItem('ct_auth_skipped');
-
     clearTimeout(_safetyTimer);
 
-    if (!session && !skipped) {
+    if (!session) {
       // Sem sessão — revelar app E mostrar tela de login como overlay
       _safeReveal();
       _showAuthScreen();
@@ -4459,7 +4471,14 @@ async function _showApp() {
           _hideAuthScreen();
         }
       });
-      setTimeout(() => Sync.download().then(() => renderApp()), 1200);
+      // Download do Supabase ANTES de revelar — dados sempre frescos
+      try { await Sync.download(); } catch(e) {
+        console.warn('[Boot] Download falhou, usando cache local:', e.message);
+      }
+      clearTimeout(_safetyTimer);
+      _safeReveal();
+      renderApp();
+      return;
     }
   } catch(e) {
     clearTimeout(_safetyTimer);
@@ -4568,15 +4587,11 @@ window.addEventListener('load', () => {
   setTimeout(() => {
     // Verifica se já viu o novo welcome (step 1 com raio)
     // Usuário já completou onboarding → direto ao app
-    const completedOnboarding = db.onboardingVersion >= 3;
-    if (completedOnboarding && isReturningUser) {
+    if (isReturningUser) {
+      // Usuário já tem dados → sempre vai direto ao app, sem onboarding
       _hideSplash(_showApp);
-    } else if (!!(db.settings && db.settings._seenWelcomeV4) && isReturningUser) {
-      _hideSplash(_showReviewModal);
-    } else if (isReturningUser) {
-      // Usuário já conhece o app — pula tela de apresentação, vai direto para configuração
-      _hideSplash(_showOnboardingDirect);
     } else {
+      // Usuário novo → onboarding completo
       _hideSplash(_showOnboarding);
     }
   }, waitLeft);
@@ -10415,6 +10430,8 @@ const Sync = {
           weight_kg: db.profile?.weight || null,
           sexo: db.profile?.sexo || null,
           birthday: db.profile?.birthday || null,
+          phone: db.profile?.phone || null,
+          city: db.profile?.city || null,
           water_goal: db.water?.goal || 3000,
           activities: db.activities || [],
           created_at: new Date().toISOString(),
@@ -10516,6 +10533,8 @@ const Sync = {
           weight_kg: db.profile?.weight || null,
           sexo: db.profile?.sexo || null,
           birthday: db.profile?.birthday || null,
+          phone: db.profile?.phone || null,
+          city: db.profile?.city || null,
           water_goal: db.water?.goal || 3000,
           activities: db.activities || [],
           updated_at: new Date().toISOString(),
@@ -10650,6 +10669,8 @@ const Sync = {
         if (p.weight_kg)  db.profile.weight  = p.weight_kg;
         if (p.sexo)       db.profile.sexo    = p.sexo;
         if (p.birthday)   db.profile.birthday = p.birthday;
+        if (p.phone)      db.profile.phone   = p.phone;
+        if (p.city)       db.profile.city    = p.city;
         if (p.water_goal) {
           if (!db.water) db.water = { goal: p.water_goal, entries: [] };
           db.water.goal = p.water_goal;
