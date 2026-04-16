@@ -1989,12 +1989,13 @@ select option{background:var(--card2)}
 .sdi-name{font-size:13px;line-height:1.35;font-weight:500;transition:color .2s}.sdi-name-kcal{font-size:11px;font-family:'Space Mono',monospace;color:var(--acid2);font-weight:400;margin-left:2px}
 .sdi-item.ticked .sdi-name{text-decoration:line-through;color:var(--muted)}
 .sdi-meta{display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap}
-.sdi-qty{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted2);background:var(--border);padding:1px 6px;border-radius:4px}
+.sdi-qty{font-family:'Space Mono',monospace;font-size:9px;color:var(--acid2);background:rgba(212,255,0,.07);border:1px solid rgba(212,255,0,.15);padding:1px 6px;border-radius:4px}
 .sdi-kcal{font-family:'Space Mono',monospace;font-size:9px;color:var(--acid2);background:rgba(212,255,0,.07);border:1px solid rgba(212,255,0,.15);padding:1px 6px;border-radius:4px;cursor:pointer;transition:all .15s}
 .sdi-kcal:hover{background:rgba(212,255,0,.14)}
 .sdi-kcal.editing{background:rgba(212,255,0,.12);border-color:var(--acid)}
 .sdi-kcal-input{width:52px;background:#0c0c0c;border:1px solid var(--acid);color:var(--acid);border-radius:4px;font-family:'Space Mono',monospace;font-size:9px;padding:1px 5px;text-align:right;outline:none;-webkit-appearance:none}
 .sdi-opt-tag{font-size:8px;font-family:'Space Mono',monospace;color:var(--muted);background:var(--border);padding:1px 5px;border-radius:4px;flex-shrink:0}
+.sdi-subst-tag{font-size:9px;font-family:'Space Mono',monospace;color:#000;background:var(--acid2);border:1px solid var(--acid);padding:2px 7px;border-radius:4px;flex-shrink:0;font-weight:700;letter-spacing:.3px}
 .sdi-del{opacity:0;background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:2px 4px;border-radius:4px;transition:opacity .15s,color .15s;flex-shrink:0;margin-top:2px}
 .sdi-item:hover .sdi-del{opacity:1}
 .sdi-del:hover{color:var(--red)}
@@ -3171,7 +3172,7 @@ select option{background:var(--card2)}
       <span class="diet-title-chip" onclick="dietTitlePickChip(this)">Definição</span>
     </div>
     <div class="field-grp" style="margin-bottom:16px">
-      <input type="text" id="dietTitleInput" placeholder="Ex: Dieta do Dr. Rômulo..." style="font-size:16px" aria-label="Nome da dieta">
+      <input type="text" id="dietTitleInput" placeholder="Ex: Bulking, Cutting, Low Carb..." style="font-size:16px" aria-label="Nome da dieta">
     </div>
     <div style="display:flex;gap:10px">
       <button class="btn btn-ghost" style="flex:1" onclick="closeDietTitleModal()">Pular</button>
@@ -3888,14 +3889,35 @@ if (db._schemaVersion < SCHEMA_VERSION) {
 // ── save: persiste local + sync Supabase em background ───────────────
 function save(){
   Storage.save(KEY, db).catch(e => console.warn('[CT] save error:', e));
-  // Sync em background só se logado — não bloqueia UI, debounce 2s
   if (db._userId) {
     clearTimeout(save._syncTimer);
     save._syncTimer = setTimeout(() => {
-      Sync.upload().catch(e => console.warn('[CT] sync error:', e.message));
+      if (navigator.onLine) {
+        // Online → sobe direto
+        Sync.upload().catch(e => console.warn('[CT] sync error:', e.message));
+      } else {
+        // Offline → enfileira para quando voltar a conexão
+        Storage.enqueue('upsert', 'all', { ts: Date.now() });
+        console.log('[CT] Offline — operação enfileirada');
+      }
     }, 2000);
   }
 }
+
+// ── Sync offline → online: drena fila quando conexão voltar ─────────
+window.addEventListener('online', () => {
+  console.log('[CT] Conexão restaurada — drenando fila de sync...');
+  if (db._userId) {
+    Storage.sync().then(r => {
+      if (r.pending === 0) console.log('[CT] Sync offline completo');
+    });
+  }
+});
+
+// Detecta offline e loga (upload vai falhar graciosamente e ficar na fila)
+window.addEventListener('offline', () => {
+  console.log('[CT] Offline — operações serão sincronizadas quando voltar');
+});
 
 // ── checkStorageHealth: roda 1x no init, avisa se >80% cheio ─────────
 function checkStorageHealth(){
@@ -7563,6 +7585,24 @@ function processStructuredDiet(legacyMeals) {
 //  DIET PARSER
 const OPTIONAL_KEYWORDS=['salada','vegetais','verduras','folhas verdes','legumes à vontade'];
 const IGNORE_KEYWORDS=['(tabela)','tabela de alimentos','ingestão de água','nome:','protocolo','dr.','saúde e performance','orientações','opção final de semana','comer na padaria','página ','prescrito em','dúvidas e feedbacks','suplementação','cafeína','creatina','leia com atenção','dieta\n','caso você','caso na sua','cuidado com','boas marcas','dose:','horário:','frequência:','• dose','observações:','vegetais à vontade =','quando não consumir','nos dias que','polpa de fruta','tipo de vegetal','adoçante'];
+// Padrões de lixo do PDF (dados do nutricionista, endereço, etc.)
+const TRASH_PATTERNS=[
+  /^crn\d*\s*\d+/i,                          // CRN9 29347/P
+  /\bcrn\w?\s*\d+/i,                          // CRN inline
+  /academia\b/i,                               // Academia Boa Forma
+  /avenida|av\.|rua |alameda|travessa/i,        // endereços
+  /\(\d{2}\)\s*\d{4,5}[-\s]?\d{4}/,           // telefone (32)98838...
+  /^\d{5}-?\d{3}$/,                            // CEP
+  /,\s*(mg|sp|rj|minas gerais|são paulo)/i,    // cidade, estado
+  /cataguases|uberlândia|belo horizonte/i,      // cidades conhecidas
+  /^[A-ZÁÀÃÂa-záàãâ]+ [A-ZÁÀÃÂa-záàãâ]+ [A-ZÁÀÃÂa-záàãâ]+ [A-ZÁÀÃÂa-záàãâ]+\s*[-–]\s*crn/i, // Nome Completo - CRN
+];
+function isTrashLine(line) {
+  const l = line.trim();
+  // Nome + CRN na mesma linha: "Manoel Victor Moreira Machado - CRN9 29347/P"
+  if (/[-–]\s*crn\d*\s*\d+/i.test(l)) return true;
+  return TRASH_PATTERNS.some(p => p.test(l));
+}
 const MEAL_TRIGGERS=['primeira','segunda','terceira','quarta','quinta','sexta','sétima','setima','desjejum','café da manhã','cafe da manha','colação','colacao','lanche','almoço','almoco','jantar','ceia','pré-treino','pre-treino','pos-treino','pós-treino','refeição','refeicao'];
 
 // ── Detecta qual formato é o texto da dieta ──────────────────────────
@@ -7600,11 +7640,20 @@ function parseDietTableFormat(raw) {
   }
   function fmtQty(q) { return q.trim(); } // mantém a quantidade completa incluindo gramas
   function parseSubstLine(line) {
-    return line.split(/\s*-\s*ou\s*-\s*/i).map(p=>p.trim()).filter(p=>p).map(p=>{
-      const grams=extractGrams(p);
-      const name=p.replace(/\s*[-–]\s*[\d.,]+.*$/,'').replace(/\s*\([\d.,]+\s*(?:g|ml)\)$/i,'').trim();
-      return {name:name||p,grams,text:p};
-    }).filter(s=>s.name.length>1);
+    // Normaliza separadores: " - ou - " e " ou " são equivalentes
+    const normalized = line.replace(/\s*-\s*ou\s*-\s*/gi, ' | ').replace(/\s+ou\s+/gi, ' | ');
+    return normalized.split('|').map(p=>p.trim()).filter(p=>p).map(p=>{
+      // Remove traço inicial solto: "- 3 Fatia(s)..." → "3 Fatia(s)..."
+      p = p.replace(/^[-–]\s*/, '');
+      const grams = extractGrams(p);
+      // Extrai nome: tudo antes da quantidade (número + unidade)
+      const QTY_WORDS = 'Fatia|Unidade|Colher|Porção|Copo|Concha|Medidor|Pacote|Xícara|Lata|Escumadeira|Bife|Pedaço|Metade|vontade';
+      const mQty = p.match(new RegExp('\\s*[-–]?\\s*(\\d+[\\d.,\\/]*|[½¼¾])\\s+(?:'+QTY_WORDS+')', 'i'));
+      const name = mQty
+        ? p.slice(0, p.indexOf(mQty[0])).trim()
+        : p.replace(/\s*[-–]\s*[\d.,\/]+[^)]*$/, '').replace(/\s*\([\d.,]+\s*(?:g|ml)\)$/i, '').trim();
+      return {name: name || p, grams, text: p};
+    }).filter(s => s.name.length > 1);
   }
 
   // ── PASSO 1: juntar linha-nome + linha-quantidade separadas pelo PDF ──
@@ -7615,19 +7664,60 @@ function parseDietTableFormat(raw) {
   for (let i = 0; i < rawLines.length; i++) {
     const line = rawLines[i];
     const next = rawLines[i+1] || '';
-    // Se esta linha não parece quantidade e a próxima parece quantidade isolada,
-    // e esta linha não é um header de refeição/opção: juntar
+    const next2 = rawLines[i+2] || '';
+
+    // Filtrar lixo (nome do nutricionista, endereço, telefone, etc.) logo no início
+    if (isTrashLine(line)) { i++; continue; }
+
     const thisIsFood = !qtyRe.test(line) && !mealHeaderRe.test(line) &&
                        !opcaoRe.test(line) && !pageFooterRe.test(line) &&
                        !substHdrRe.test(line) && !observRe.test(line) &&
                        !knownMealRe.test(line) && line.length > 2;
-    const nextIsOrphanQty = qtyRe.test(next) && !mealHeaderRe.test(next) &&
-                             !next.includes('  ') && next.length < 60;
-    // Só juntar se a linha atual ainda não tem uma quantidade embutida (2+ espaços)
     const alreadyHasQty = /\s{2,}\d/.test(line) || /\s{2,}[½¼¾]/.test(line) || /\s{2,}À vontade/i.test(line);
-    if (thisIsFood && nextIsOrphanQty && !alreadyHasQty) {
-      joined.push(line + '  ' + next); // juntar com 2 espaços = separador de coluna
-      i++; // pular a próxima linha (já consumida)
+
+    // CASO 1: próxima linha é quantidade isolada (número/fração)
+    const nextIsOrphanQty = qtyRe.test(next) && !mealHeaderRe.test(next) &&
+                             !next.includes('  ') && next.length < 80;
+
+    // CASO 2: nome do alimento quebrou em duas linhas descritivas
+    // Ex: "Patinho sem" + "gordura grelhado" → "Patinho sem gordura grelhado"
+    // Ex: "Sardinha enlatada" + "(em água)" → "Sardinha enlatada (em água)"
+    // Detecta: próxima linha é continuação (começa minúsculo, ou começa com "(", ou é adjetivo de preparo)
+    const PREP_WORDS = /^(em |ao |com |sem |no |na |grelhad|assad|cozid|refogad|desnat|desnad|desnad|inteiro|moíd|desfi|enlat|frescal|light|cremoso|concentrado|integral|\()/i;
+    const nextIsContinuation = !isTrashLine(next) && !qtyRe.test(next) &&
+                                !mealHeaderRe.test(next) && !knownMealRe.test(next) &&
+                                !substHdrRe.test(next) && !opcaoRe.test(next) &&
+                                next.length > 1 && next.length < 60 &&
+                                (PREP_WORDS.test(next) || /^[a-záàãâéêíóôõúüç]/.test(next));
+
+    // CASO 3: item em 3 partes — nome | continuação | quantidade
+    // Ex: "Suco de uva integral" + "½ Copo americano duplo" + "(120ml)"
+    const next2IsOrphanQty = qtyRe.test(next2) && !mealHeaderRe.test(next2) && next2.length < 60;
+
+    if (thisIsFood && !alreadyHasQty) {
+      if (nextIsOrphanQty && next2IsOrphanQty && !PREP_WORDS.test(next)) {
+        // 3 partes: nome + qty_descrição + qty_gramas
+        joined.push(line + '  ' + next + ' ' + next2);
+        i += 2;
+      } else if (nextIsContinuation) {
+        // 2 partes descritivas: juntar nome + continuação
+        const merged = line + ' ' + next;
+        // Verificar se a linha seguinte à continuação é quantidade
+        const afterNext = rawLines[i+2] || '';
+        const afterIsQty = qtyRe.test(afterNext) && !mealHeaderRe.test(afterNext) && afterNext.length < 80;
+        if (afterIsQty) {
+          joined.push(merged + '  ' + afterNext);
+          i += 2;
+        } else {
+          joined.push(merged);
+          i++;
+        }
+      } else if (nextIsOrphanQty) {
+        joined.push(line + '  ' + next);
+        i++;
+      } else {
+        joined.push(line);
+      }
     } else {
       joined.push(line);
     }
@@ -7703,6 +7793,7 @@ function parseDietTableFormat(raw) {
     // Substituições inline
     if (collectingSubst && curSubstTarget && cur) {
       if (IGNORE_KEYWORDS.some(k=>line.toLowerCase().startsWith(k))) { collectingSubst=false; return; }
+      if (isTrashLine(line)) return;
       if (!cur._substMap[curSubstTarget]) cur._substMap[curSubstTarget]=[];
       const substs = parseSubstLine(line);
       if (substs.length>0) cur._substMap[curSubstTarget].push(...substs);
@@ -7712,6 +7803,7 @@ function parseDietTableFormat(raw) {
     // Item da tabela principal
     if (cur && !collectingSubst) {
       if (IGNORE_KEYWORDS.some(k=>line.toLowerCase().startsWith(k))) return;
+      if (isTrashLine(line)) return;
       const row = parseTableRow(line);
       if (row && row.name.length>1 && !IGNORE_KEYWORDS.some(k=>row.name.toLowerCase().includes(k))) {
         const grams = extractGrams(row.qty);
@@ -8379,7 +8471,7 @@ function renderStructuredMealCard(meal,mi){
       +(item.quantity?'<span class="sdi-qty">'+escHtml(item.quantity)+'</span>':'')
       +'<span class="sdi-kcal" id="sdi_kcal_'+mi+'_'+ii+'" onclick="sdi_editKcal('+mi+','+ii+',event)" title="Editar calorias">'+(kcal?kcal+' kcal':'— kcal')+'</span>'
       +(item.optional?'<span class="sdi-opt-tag">opcional</span>':'')
-      +(hasOpts?'<span class="sdi-opt-tag" style="background:rgba(212,255,0,.08);color:var(--acid2);border:1px solid rgba(212,255,0,.15)">⇄ substituir</span>':'')
+      +(hasOpts?'<span class="sdi-subst-tag">⇄ substituir</span>':'')
       +'</div>'
       +'</div>'
       +'<button class="sdi-del" onclick="sdi_removeItem('+mi+','+ii+',event)"><span class="icon icon-times"></span></button>'
@@ -10910,17 +11002,23 @@ const Storage = {
     }
   },
 
-  // ── Sync stub — conectar ao Supabase na Fase 3 ───────────────
+  // ── Drain: drena fila pendente para o Supabase ──────────────
   async sync() {
-    // TODO Fase 3: substituir por chamada real ao Supabase
-    // const pending = (db.syncQueue||[]).filter(q => !q.synced);
-    // for (const op of pending) {
-    //   await supabase.from(op.table)[op.op === 'delete' ? 'delete' : 'upsert'](op.data);
-    //   op.synced = true;
-    // }
-    // save();
-    console.log('[Storage.sync] Stub — backend não conectado ainda (Fase 3)');
-    return { pending: (db.syncQueue||[]).filter(q => !q.synced).length };
+    if (!navigator.onLine || !db._userId) return { pending: 0 };
+    const pending = (db.syncQueue||[]).filter(q => !q.synced);
+    if (!pending.length) return { pending: 0 };
+    try {
+      // Faz upload completo — mais confiável que processar item a item
+      await Sync.upload();
+      // Marca todos como sincronizados
+      (db.syncQueue||[]).forEach(q => { q.synced = true; });
+      save();
+      console.log('[Storage.sync] Fila drenada —', pending.length, 'ops');
+      return { pending: 0 };
+    } catch(e) {
+      console.warn('[Storage.sync] Falhou, tentará novamente:', e.message);
+      return { pending: pending.length };
+    }
   },
 };
 
