@@ -4606,31 +4606,15 @@ window.addEventListener('load', () => {
   const elapsed  = Date.now() - (window._appBootTs || Date.now());
   const waitLeft = Math.max(0, SPLASH_VISIBLE_MS - elapsed);
 
-  setTimeout(async () => {
+  setTimeout(() => {
     // Verifica se já viu o novo welcome (step 1 com raio)
     // Usuário já completou onboarding → direto ao app
     if (isReturningUser) {
       // Usuário já tem dados → sempre vai direto ao app, sem onboarding
       _hideSplash(_showApp);
     } else {
-      // localStorage vazio — pode ser novo dispositivo/browser com conta existente.
-      // Verifica se há sessão ativa no Supabase antes de mostrar onboarding.
-      try {
-        const sb = await _getSupabase();
-        const { data } = await sb.auth.getSession();
-        if (data?.session) {
-          // Usuário autenticado — dados serão baixados do Supabase pelo _showApp
-          console.log('[Boot] Sessão Supabase detectada — pulando onboarding');
-          _hideSplash(_showApp);
-        } else {
-          // Sem sessão e sem dados locais → onboarding completo
-          _hideSplash(_showOnboarding);
-        }
-      } catch(e) {
-        // Offline ou erro no Supabase → mostra onboarding normalmente
-        console.warn('[Boot] Não foi possível verificar sessão:', e.message);
-        _hideSplash(_showOnboarding);
-      }
+      // Usuário novo → onboarding completo
+      _hideSplash(_showOnboarding);
     }
   }, waitLeft);
 });
@@ -7792,6 +7776,7 @@ function parseDietTableFormat(raw) {
       // (D) prep/adjetivo do alimento
       const nxtIsPrep         = /^(?:em |ao |com |sem |no |na |grelhad|assad|cozid|refogad|desnat|desfiado|enlat|frescal|light|cremoso|concentrado|integral|gordura|sem pele|moído|\((?!\d)[^)]+\))/i.test(nxt);
       // (E) próxima linha é parte de substituição que continua
+      const nxtContinuesSubst = nxtStartsWithOu || mergedEndsWithOu || mergedEndsWithDash;
       const nxtContinuesSubst = nxtStartsWithOu || mergedEndsWithOu || mergedEndsWithDash;
       // "- 3 Fatia(s)..." — traço + número = quantidade do item anterior
       const nxtIsDashQty = /^-\s*(?:\d+[.,]?\d*|[½¼¾])\s+/.test(nxt);
